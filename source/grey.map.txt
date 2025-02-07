@@ -1,0 +1,6 @@
+ZOBJECT{
+    global:
+        game_main;
+    local:
+    *;
+};
