@@ -1,4 +1,4 @@
-#include <zot.h> //a custom memory manager
+#include <zot.h>  //a custom memory manager
 
 #ifdef _WIN32
 #include <windows.h>
@@ -38,10 +38,18 @@ typedef struct {
 typedef bool (*event_handler)(event *);
 
 typedef struct {
-  event_handler event_handler[MAX_EVENT_HANDLER];
-  int event_type[MAX_EVENT_HANDLER];
+  event_handler *event_handler;
+  int *event_type;
   int no_event_handler;
+  int avail_no_event_handler;
 } event_system;
+
+void initialize_event_system(event_system*system, int initial_no_of_system){
+  system->event_handler=zcalloc(initial_no_of_system, sizeof(*system->event_handler));
+  system->event_type=zcalloc(initial_no_of_system, sizeof(*system->event_type));
+  system->no_event_handler=0;
+  system->avail_no_event_handler=initial_no_of_system;
+}
 
 void event_handler_broadcast(event_system *system, event *event) {
   for (int i = 0; i < system->no_event_handler; i++) {

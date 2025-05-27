@@ -1,5 +1,12 @@
-set(SOURCE_FILES 
-game_application/game_main.c
-game_application/event_system.c
-game_logic/entity.c
+set(SOURCE_FILES
+    game_application/game_main.c
+    game_application/event_system.c
+    game_logic/component.c
+    game_logic/entity.c
+    game_logic/actor.c
+    game_logic/physics_system.c
+    game_logic/actor_manager.c
+    game_logic/render_system.c
+    game_logic/ai_system.c
+    game_logic/systems_manager.c
 )

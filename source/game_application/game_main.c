@@ -2,20 +2,26 @@
 #include <stdlib.h>
 #include <zot.h> //a custom memory manager
 
+#include "../game_logic/systems_manager.h"
+#include "game_main.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <time.h>
+#include <unistd.h>
 #endif
 
 #ifdef _WIN32
 #define signal(...)
+#define zsleep(ms) Sleep(ms)
 typedef LARGE_INTEGER ztimespec;
 double freq;
 static inline void get_win32_frequency();
 #else
 typedef struct timespec ztimespec;
 #define get_win32_frequency(...)
+#define zsleep(ms) usleep((ms) * 1000)
 #endif
 
 #ifndef DEBUG
@@ -30,13 +36,12 @@ typedef struct timespec ztimespec;
 #define LOG_ERROR(...)
 #endif
 
-#define TIMESTEP 0.008333333333
-
 void quit_game(int signal);
 void game_cleanup();
 static inline void register_interrupt_signal_handler();
 static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
+static void render_frame(double interpolation_factor);
 
 bool quit = false;
 ztimespec iter_start, iter_end;
@@ -55,23 +60,42 @@ int game_main() {
   double dt = 0;
 
   while (!quit) {
-
-    time_elapsed = compute_lapsed_time();
+    double frame_time = compute_lapsed_time();
+    time_elapsed+=frame_time;
+    
+#define MAX_ACCUMULATED_TIME 0.25 // Avoid spiral of death
+  if (time_elapsed > MAX_ACCUMULATED_TIME) {
+    time_elapsed = MAX_ACCUMULATED_TIME;
+  }
 
     // catch up on missed time
     while (time_elapsed >= TIMESTEP) {
       LOG("Progressing game state after time %fms.", TIMESTEP * 1000.);
+      systems_update();
       time_elapsed -= TIMESTEP;
     }
 
-    dt = compute_lapsed_time();
-
-    get_time_now(&iter_start);
-
-    LOG("Rendering at dt = %fms.", dt * 1000);
+    double interpolation_factor =  time_elapsed/TIMESTEP;
+    LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000, interpolation_factor);
+    render_frame(interpolation_factor);
+    
+    
+    // sleep to match framerate
+    // double current_frame_time = (dt + compute_lapsed_time()) * 1000;
+    // double expected_frame_time = TIMESTEP * 1000;
+    // double time_gap = expected_frame_time - current_frame_time;
+    // if ((time_gap) > 1e-6) {
+    //   zsleep(time_gap);
+    // }
   }
 
   return 0;
+}
+
+
+static void render_frame(double interpolation_factor){
+  if(interpolation_factor >1)interpolation_factor=1;
+  // render
 }
 
 #ifdef _WIN32
@@ -102,18 +126,20 @@ static inline bool get_time_now(ztimespec *ts) {
   QueryPerformanceCounter(ts);
   return true;
 #else
-  return clock_gettime(CLOCK_MONOTONIC, ts);
+  return clock_gettime(CLOCK_MONOTONIC, ts)==0;
 #endif
 }
 
 static inline double compute_lapsed_time() {
   get_time_now(&iter_end);
 #ifdef _WIN32
-  return (iter_end.QuadPart - iter_start.QuadPart) / freq;
+  double time_elapsed = (iter_end.QuadPart - iter_start.QuadPart) / freq;
 #else
-  return (iter_end.tv_sec - iter_start.tv_sec) +
-         (iter_end.tv_nsec - iter_start.tv_nsec) / 1e9;
+  double time_elapsed = (iter_end.tv_sec - iter_start.tv_sec) +
+                        (iter_end.tv_nsec - iter_start.tv_nsec) / 1e9;
 #endif
+  get_time_now(&iter_start);
+  return time_elapsed;
 }
 
 void quit_game(int signal) {

@@ -29,36 +29,66 @@ target_compile_features(grey_c_flags INTERFACE c_std_23)
 target_compile_options(
   grey_c_flags
   INTERFACE
-    "$<BUILD_INTERFACE:${C_WARNINGS}>"
+  "$<BUILD_INTERFACE:${C_WARNINGS}>"
 )
 target_link_options(
   grey_c_flags
   INTERFACE
-    ${VERSION_SCRIPT_FLAGS}
+  ${VERSION_SCRIPT_FLAGS}
 )
 
 include(ExternalProject)
+
+list(APPEND CMAKE_PREFIX_PATH
+  "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc"
+  "${CMAKE_BINARY_DIR}/zot/lib/cmake/zot")
+
+find_package(memalloc QUIET)
+if(NOT memalloc_FOUND)
+  ExternalProject_Add(
+    MemAlloc
+    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+    INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
+    BUILD_ALWAYS OFF
+    STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+  )
+endif()
 
 # Use relative path for Zot source directory
 set(ZOT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../xab_laud_ubject/zot)
 set(ZOT_INSTALL_DIR ${CMAKE_BINARY_DIR}/zot)
 
-ExternalProject_Add(
-  Zot
-  SOURCE_DIR ${ZOT_SOURCE_DIR}
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${ZOT_INSTALL_DIR}
-  BUILD_BYPRODUCTS ${ZOT_INSTALL_DIR}/lib/libzot.so
-)
+find_package(zot QUIET)
+if(NOT zot_FOUND)
+  ExternalProject_Add(
+    Zot
+    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/zot/
+    INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+    BUILD_ALWAYS OFF
+    STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+  )
+endif()
 
 # Main library setup
 add_library(${TARGET} SHARED)
 target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
 target_link_options(${TARGET} PRIVATE ${VERSION_SCRIPT_FLAGS})
-target_link_libraries(${TARGET} PRIVATE grey_c_flags zot)
+target_link_libraries(${TARGET} PRIVATE grey_c_flags memalloc zot)
 target_include_directories(${TARGET} PRIVATE ${ZOT_INSTALL_DIR}/include)
 target_link_directories(${TARGET} PRIVATE ${ZOT_INSTALL_DIR}/lib)
 set_target_properties(${TARGET} PROPERTIES LINK_DEPENDS ${VERSION_SCRIPT})
-add_dependencies(${TARGET} Zot)
+if(NOT memalloc_FOUND)
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
+  target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/lib)
+  add_dependencies(Zot MemAlloc)
+endif()
+if(NOT zot_FOUND)
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/zot/include)
+  target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/zot/lib)
+  add_dependencies(${TARGET} Zot)
+endif()
 
 # Option to enable or disable phony main
 option(BUILD_PHONY_MAIN "Build phony main" ON)
