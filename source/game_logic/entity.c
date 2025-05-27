@@ -17,6 +17,8 @@ uint32_t number_of_free_entities = 0;
 
 uint32_t number_of_active_entities = 0;
 
+entity player;
+
 entity create_entity() {
   uint32_t id;
 
@@ -37,8 +39,6 @@ entity create_entity() {
 }
 
 void destroy_entity(entity e) {
-  // detach_position_component(e);
-  // detach_velocity_component(e);
   if (!free_entities)
     free_entities = zcalloc(MAX_NO_ENTITY, sizeof(*free_entities));
   free_entities[number_of_free_entities++] = e.id;

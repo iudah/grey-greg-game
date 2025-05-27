@@ -1,7 +1,9 @@
 set(HEADER_FILES
     game_application/game_main.h
+    game_logic/entity.h
     game_logic/actor.h
     game_logic/component.h
-    game_logic/entity.h
-    game_logic/systems_manager.h
+    game_logic/physics_system.h
+    game_logic/arm_neon_ext_itunu.h
+    game_logic/game_logic.h
 )

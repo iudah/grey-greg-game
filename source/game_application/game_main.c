@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <zot.h> //a custom memory manager
 
-#include "../game_logic/systems_manager.h"
+#include "game_logic/game_logic.h"
 #include "game_main.h"
 
 #ifdef _WIN32
@@ -41,7 +41,7 @@ void game_cleanup();
 static inline void register_interrupt_signal_handler();
 static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
-static void render_frame(double interpolation_factor);
+static void render_frame(float interpolation_factor);
 
 bool quit = false;
 ztimespec iter_start, iter_end;
@@ -61,41 +61,36 @@ int game_main() {
 
   while (!quit) {
     double frame_time = compute_lapsed_time();
-    time_elapsed+=frame_time;
-    
+    time_elapsed += frame_time;
+
 #define MAX_ACCUMULATED_TIME 0.25 // Avoid spiral of death
-  if (time_elapsed > MAX_ACCUMULATED_TIME) {
-    time_elapsed = MAX_ACCUMULATED_TIME;
-  }
+    if (time_elapsed > MAX_ACCUMULATED_TIME) {
+      time_elapsed = MAX_ACCUMULATED_TIME;
+    }
 
     // catch up on missed time
     while (time_elapsed >= TIMESTEP) {
-      LOG("Progressing game state after time %fms.", TIMESTEP * 1000.);
+      LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
       systems_update();
       time_elapsed -= TIMESTEP;
+      LOG("Time lapsed after `systems_update();`: %fms", time_elapsed * 1000.);
     }
 
-    double interpolation_factor =  time_elapsed/TIMESTEP;
-    LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000, interpolation_factor);
+    double interpolation_factor = time_elapsed / TIMESTEP;
+    LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000,
+        interpolation_factor);
     render_frame(interpolation_factor);
-    
-    
-    // sleep to match framerate
-    // double current_frame_time = (dt + compute_lapsed_time()) * 1000;
-    // double expected_frame_time = TIMESTEP * 1000;
-    // double time_gap = expected_frame_time - current_frame_time;
-    // if ((time_gap) > 1e-6) {
-    //   zsleep(time_gap);
-    // }
   }
 
   return 0;
 }
 
-
-static void render_frame(double interpolation_factor){
-  if(interpolation_factor >1)interpolation_factor=1;
+static void render_frame(float interpolation_factor) {
+  if (interpolation_factor > 1)
+    interpolation_factor = 1;
   // render
+  interpolate_positions(interpolation_factor);
+  // perform swept collision test
 }
 
 #ifdef _WIN32
@@ -126,7 +121,7 @@ static inline bool get_time_now(ztimespec *ts) {
   QueryPerformanceCounter(ts);
   return true;
 #else
-  return clock_gettime(CLOCK_MONOTONIC, ts)==0;
+  return clock_gettime(CLOCK_MONOTONIC, ts) == 0;
 #endif
 }
 

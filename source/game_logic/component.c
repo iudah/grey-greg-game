@@ -41,7 +41,7 @@ bool attach_component(entity e, struct generic_component *component) {
     return false;
 
   SET_BIT(set->mask, e.id);
-  set->dense[set->count] = e.id;
+  set->dense[set->count] = e;
   set->sparse[e.id] = set->count;
   set->count++;
   return true;
@@ -58,9 +58,9 @@ void detach_component(entity e, struct generic_component *component) {
   uint32_t removed_idx = set->sparse[e.id];
   uint32_t last_idx = --set->count;
 
-  uint32_t last_entity = set->dense[last_idx];
+  entity last_entity = set->dense[last_idx];
   set->dense[removed_idx] = last_entity;
-  set->sparse[last_entity] = removed_idx;
+  set->sparse[last_entity.id] = removed_idx;
 
   if (removed_idx == last_idx)
     return;

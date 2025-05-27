@@ -6,7 +6,7 @@
 #include "entity.h"
 
 typedef struct {
-  uint32_t *dense;
+  entity *dense;
   uint32_t *sparse;
   uint32_t *mask;
   uint32_t count;
@@ -27,6 +27,7 @@ struct generic_component {
 
 bool attach_component(entity e, struct generic_component *component);
 void detach_component(entity e, struct generic_component *component);
-bool initialize_component(struct generic_component *component, uint64_t component_size);
+bool initialize_component(struct generic_component *component,
+                          uint64_t component_size);
 
 #endif
