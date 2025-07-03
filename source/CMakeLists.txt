@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(grey VERSION 1.0 DESCRIPTION "grey")
+project(grey VERSION 1.0.0 DESCRIPTION "grey")
 
 set(TARGET grey)
 
@@ -10,88 +10,103 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 include(../common.cmake)
 
-# Set version script
-set(VERSION_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/grey.map.txt)
-if(EXISTS ${VERSION_SCRIPT})
-  set(VERSION_SCRIPT_FLAGS "-Wl,--version-script,${VERSION_SCRIPT}" "-Wl,--no-undefined-version")
-else()
-  message(WARNING "Version script not found at ${VERSION_SCRIPT}")
-  set(VERSION_SCRIPT_FLAGS "")
-endif()
+# Option to enable or disable phony main
+option(BUILD_PHONY_MAIN "Build phony main" ON)
 
-# Include source and header files
-include(sources.cmake)
-include(headers.cmake)
-
-# Create INTERFACE target for shared flags
-add_library(grey_c_flags INTERFACE)
-target_compile_features(grey_c_flags INTERFACE c_std_23)
-target_compile_options(
-  grey_c_flags
-  INTERFACE
-  "$<BUILD_INTERFACE:${C_WARNINGS}>"
-)
-target_link_options(
-  grey_c_flags
-  INTERFACE
-  ${VERSION_SCRIPT_FLAGS}
-)
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
+message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 include(ExternalProject)
 
-list(APPEND CMAKE_PREFIX_PATH
-  "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc"
-  "${CMAKE_BINARY_DIR}/zot/lib/cmake/zot")
-
 find_package(memalloc QUIET)
-if(NOT memalloc_FOUND)
+if(NOT TARGET memalloc::memalloc)
+  message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
-    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+    GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
+    GIT_TAG origin/master
+    GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+    UPDATE_DISCONNECTED TRUE
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
-endif()
 
-# Use relative path for Zot source directory
-set(ZOT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../xab_laud_ubject/zot)
-set(ZOT_INSTALL_DIR ${CMAKE_BINARY_DIR}/zot)
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include")
+
+  add_library(memalloc_imported STATIC IMPORTED)
+  add_dependencies(memalloc_imported MemAlloc)
+  set_target_properties(memalloc_imported PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
+  )
+  add_library(memalloc::memalloc ALIAS memalloc_imported)
+endif()
 
 find_package(zot QUIET)
-if(NOT zot_FOUND)
+if(NOT TARGET zot::zot)
+  message(STATUS "zot not found, adding as ExternalProject")
   ExternalProject_Add(
-    Zot
-    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/zot/
+    zot
+    GIT_REPOSITORY "https://github.com/iudah/zot.git"
+    GIT_TAG origin/main
+    GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+    UPDATE_DISCONNECTED TRUE
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
+
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/zot/include")
+
+  add_library(zot_imported STATIC IMPORTED)
+  add_dependencies(zot_imported zot MemAlloc)
+  set_target_properties(zot_imported PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include"
+  )
+  add_library(zot::zot ALIAS zot_imported)
 endif()
 
-# Main library setup
-add_library(${TARGET} SHARED)
-target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
-target_link_options(${TARGET} PRIVATE ${VERSION_SCRIPT_FLAGS})
-target_link_libraries(${TARGET} PRIVATE grey_c_flags memalloc zot)
-target_include_directories(${TARGET} PRIVATE ${ZOT_INSTALL_DIR}/include .)
-target_link_directories(${TARGET} PRIVATE ${ZOT_INSTALL_DIR}/lib)
-set_target_properties(${TARGET} PROPERTIES LINK_DEPENDS ${VERSION_SCRIPT})
-if(NOT memalloc_FOUND)
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
-  target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/lib)
-  add_dependencies(Zot MemAlloc)
-endif()
-if(NOT zot_FOUND)
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/zot/include)
-  target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/zot/lib)
-  add_dependencies(${TARGET} Zot)
+include(sources.cmake)
+include(headers.cmake)
+
+add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
+add_library(grey::${TARGET} ALIAS ${TARGET})
+
+target_include_directories(${TARGET}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
+  $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
+target_link_libraries(${TARGET} PUBLIC zot::zot)
+target_compile_features(${TARGET} PUBLIC c_std_23)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  if(MSVC)
+    target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
+    target_link_options(${TARGET} PRIVATE /DEBUG)
+  else()
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
+  endif()
+  if(ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_link_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
+  endif()
 endif()
 
-# Option to enable or disable phony main
-option(BUILD_PHONY_MAIN "Build phony main" ON)
+if((CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64") AND NOT MSVC)
+  include(CheckCCompilerFlag)
+  check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
+  if(HAS_NEON_FLAG)
+    target_compile_options(${TARGET} PRIVATE -mfpu=neon)
+  endif()
+endif()
 
 if(BUILD_PHONY_MAIN)
   # Generate phony main at configure time
@@ -100,6 +115,19 @@ if(BUILD_PHONY_MAIN)
   target_link_libraries(grey_phony PRIVATE ${TARGET})
 endif()
 
-# Install targets with preserved header structure
-install(TARGETS ${TARGET} DESTINATION lib)
-install(FILES ${HEADER_FILES} DESTINATION include)
+include(GNUInstallDirs)
+
+install(TARGETS ${TARGET}
+  EXPORT GreyTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT GreyTargets
+  FILE grey-config.cmake
+  NAMESPACE grey::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/grey)
+
+export(EXPORT GreyTargets
+  FILE "${CMAKE_BINARY_DIR}/grey-config.cmake")

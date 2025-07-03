@@ -70,15 +70,19 @@ int game_main() {
 
     // catch up on missed time
     while (time_elapsed >= TIMESTEP) {
-      LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
+      // ***
+      // LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
       systems_update();
       time_elapsed -= TIMESTEP;
-      LOG("Time lapsed after `systems_update();`: %fms", time_elapsed * 1000.);
+      
+      // ***
+      // LOG("Time lapsed after `systems_update();`: %fms", time_elapsed * 1000.);
     }
 
     double interpolation_factor = time_elapsed / TIMESTEP;
-    LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000,
-        interpolation_factor);
+    // Render logs
+    // LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000,
+    //     interpolation_factor);
     render_frame(interpolation_factor);
   }
 
@@ -91,6 +95,7 @@ static void render_frame(float interpolation_factor) {
   // render
   interpolate_positions(interpolation_factor);
   // perform swept collision test
+  compute_swept_aabb_collision();
 }
 
 #ifdef _WIN32

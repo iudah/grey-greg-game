@@ -1,0 +1,9 @@
+set(HEADER_FILES
+    source/game_application/game_main.h
+    source/game_logic/entity.h
+    source/game_logic/actor.h
+    source/game_logic/component.h
+    source/game_logic/physics_system.h
+    source/game_logic/arm_neon_ext_itunu.h
+    source/game_logic/game_logic.h
+)

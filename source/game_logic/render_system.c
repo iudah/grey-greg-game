@@ -52,7 +52,7 @@ void render_system_update() {
   struct rotation_st *rot = rotation_component->rotation;
   struct scale_st *scale = scale_component->scale;
 
-  for (uint32_t i = 0; i < scale_component->set.count; i++) {
+  for (uint32_t i = 0; i < scale_component->set.count; ++i) {
     // compute transform matrix
   }
 }

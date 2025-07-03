@@ -191,7 +191,7 @@ void ai_system_update() {
   float velocity[4];
   extern entity player;
 
-  for (uint32_t i = 0; i < ai_component->set.count; i++) {
+  for (uint32_t i = 0; i < ai_component->set.count; ++i) {
     ai_state state = states[i];
     entity npc = ai_component->set.dense[i];
 

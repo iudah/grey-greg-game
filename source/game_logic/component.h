@@ -18,12 +18,10 @@ struct generic_component {
   void *component_data;
 };
 
-// extern struct generic_component *position_component;
-// extern struct generic_component *velocity_component;
-// extern struct generic_component *rotation_component;
-// extern struct generic_component *network_component;
-// extern struct generic_component *ai_component;
-// extern struct generic_component *physics_component;
+extern struct position_component *position_component;
+extern struct velocity_component *velocity_component;
+extern struct aabb_component *aabb_component;
+extern struct waypoint_component *waypoint_component;
 
 bool attach_component(entity e, struct generic_component *component);
 void detach_component(entity e, struct generic_component *component);
