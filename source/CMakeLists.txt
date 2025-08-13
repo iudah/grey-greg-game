@@ -19,6 +19,7 @@ message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 include(ExternalProject)
 
 find_package(memalloc QUIET)
+add_library(memalloc_imported STATIC IMPORTED)
 if(NOT TARGET memalloc::memalloc)
   message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
@@ -36,16 +37,16 @@ if(NOT TARGET memalloc::memalloc)
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include")
 
-  add_library(memalloc_imported STATIC IMPORTED)
   add_dependencies(memalloc_imported MemAlloc)
-  set_target_properties(memalloc_imported PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
-  )
   add_library(memalloc::memalloc ALIAS memalloc_imported)
 endif()
+set_target_properties(memalloc_imported PROPERTIES
+  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
+)
 
 find_package(zot QUIET)
+add_library(zot_imported STATIC IMPORTED)
 if(NOT TARGET zot::zot)
   message(STATUS "zot not found, adding as ExternalProject")
   ExternalProject_Add(
@@ -63,14 +64,13 @@ if(NOT TARGET zot::zot)
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/zot/include")
 
-  add_library(zot_imported STATIC IMPORTED)
   add_dependencies(zot_imported zot MemAlloc)
-  set_target_properties(zot_imported PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include"
-  )
   add_library(zot::zot ALIAS zot_imported)
 endif()
+set_target_properties(zot_imported PROPERTIES
+  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include"
+)
 
 include(sources.cmake)
 include(headers.cmake)
@@ -92,7 +92,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
   else()
-    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer )
   endif()
   if(ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)

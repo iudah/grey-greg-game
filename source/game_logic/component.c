@@ -1,5 +1,7 @@
 #include "component.h"
 
+#include <assert.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <zot.h>
 
@@ -64,6 +66,11 @@ void detach_component(entity e, struct generic_component *component) {
 
   if (removed_idx == last_idx)
     return;
+
+  assert(set->dense && set->sparse && set->mask);
+  assert(component->component_data || set->component_size == 0);
+  assert(removed_idx <= set->count);
+  assert(last_idx <= set->count);
 
   if (set->component_size > 0)
     memcpy(&data[removed_idx * set->component_size],

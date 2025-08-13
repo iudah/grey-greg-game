@@ -74,9 +74,10 @@ int game_main() {
       // LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
       systems_update();
       time_elapsed -= TIMESTEP;
-      
+
       // ***
-      // LOG("Time lapsed after `systems_update();`: %fms", time_elapsed * 1000.);
+      // LOG("Time lapsed after `systems_update();`: %fms", time_elapsed *
+      // 1000.);
     }
 
     double interpolation_factor = time_elapsed / TIMESTEP;
