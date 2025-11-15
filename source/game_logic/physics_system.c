@@ -1,4 +1,5 @@
 #include "component.h"
+#include "game_application/event_system.h"
 #include "game_application/game_main.h"
 #include <arm_neon.h>
 #include <assert.h>
@@ -38,6 +39,12 @@ struct waypoint_component {
     float x, y, z, w;
   } *waypoint;
 };
+
+typedef struct {
+  entity a, b;
+  // positions
+  // collision point
+} collision_data;
 
 struct position_component *position_component;
 struct velocity_component *velocity_component;
@@ -200,6 +207,19 @@ bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
   return result[0] && result[1] && result[2];
 }
 
+void trigger_collision_event(entity entity_i, entity entity_j) {
+  collision_data *collision = zmalloc(sizeof(*collision));
+
+  collision->a = entity_i;
+  collision->b = entity_j;
+
+  event_trigger(event__queue, collision, COLLISION_EVENT);
+}
+
+void resolve_collision(entity entity_i, entity entity_j) {
+  trigger_collision_event(entity_i, entity_j);
+}
+
 void compute_swept_aabb_collision() {
   struct aabb_st *extents = aabb_component->extent;
   struct vec4_st *curr_positions = position_component->curr_position;
@@ -239,7 +259,15 @@ void compute_swept_aabb_collision() {
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
         LOG("Collision between entity %d and %d", entity_a.id, entity_b.id);
-        // TODO: resolve_collision(entity_i, entity_j);
+        resolve_collision(entity_a, entity_b);
+
+        #warning Ad-hoc velocity correction
+        printf("Ad-hoc velocity");
+        // ToDo: use momentum / AI
+        float32x4_t vel =
+            vld1q_f32((float *)&velocity_component->velocity[entity_a.id]);
+        vel = vmulq_n_f32(vel, -1);
+        vst1q_f32((float *)&velocity_component->velocity[entity_a.id], vel);
       }
     }
   }
@@ -273,12 +301,6 @@ void interpolate_positions(float interpolation_factor) {
     entity entity_i = position_component->set.dense[i];
     printf("Entity %i at (%g, %g, %g)\n", entity_i.id, curr_pos[i].x,
            curr_pos[i].y, curr_pos[i].z);
-
-    // entity entity_i = position_component->set.dense[i];
-    // uint32_t aabb_idx_i = aabb_component->set.sparse[entity_i.id];
-
-    // compute_swept_aabb_collision(&curr_pos[i], &prev_pos[i],
-    // &aabb[aabb_idx_i]);
   }
 }
 

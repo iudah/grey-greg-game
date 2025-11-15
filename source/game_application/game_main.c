@@ -49,6 +49,8 @@ ztimespec iter_start, iter_end;
 int game_main() {
   atexit(game_cleanup);
   register_interrupt_signal_handler();
+
+
   get_win32_frequency();
 
   LOG("Game started.");
