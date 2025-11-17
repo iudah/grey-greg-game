@@ -207,17 +207,25 @@ bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
   return result[0] && result[1] && result[2];
 }
 
-void trigger_collision_event(entity entity_i, entity entity_j) {
-  collision_data *collision = zmalloc(sizeof(*collision));
-
-  collision->a = entity_i;
-  collision->b = entity_j;
-
-  event_trigger(event__queue, collision, COLLISION_EVENT);
-}
-
 void resolve_collision(entity entity_i, entity entity_j) {
-  trigger_collision_event(entity_i, entity_j);
+
+  event_enqueue_collision(entity_i, entity_j);
+
+  LOG("Collision between entity %d and %d", entity_i.id, entity_j.id);
+
+#warning Ad-hoc velocity correction
+  LOG("Ad-hoc velocity");
+  // ToDo: use momentum based handler (colliding object) / AI based hander
+  // (spatial aware)
+  float32x4_t vel;
+
+  vel = vld1q_f32((float *)&velocity_component->velocity[entity_j.id]);
+  vel = vmulq_n_f32(vel, -1);
+  vst1q_f32((float *)&velocity_component->velocity[entity_j.id], vel);
+
+  vel = vld1q_f32((float *)&velocity_component->velocity[entity_i.id]);
+  vel = vmulq_n_f32(vel, -1);
+  vst1q_f32((float *)&velocity_component->velocity[entity_i.id], vel);
 }
 
 void compute_swept_aabb_collision() {
@@ -258,16 +266,7 @@ void compute_swept_aabb_collision() {
                              &extents[j], &min_b, &max_b);
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
-        LOG("Collision between entity %d and %d", entity_a.id, entity_b.id);
         resolve_collision(entity_a, entity_b);
-
-        #warning Ad-hoc velocity correction
-        printf("Ad-hoc velocity");
-        // ToDo: use momentum / AI
-        float32x4_t vel =
-            vld1q_f32((float *)&velocity_component->velocity[entity_a.id]);
-        vel = vmulq_n_f32(vel, -1);
-        vst1q_f32((float *)&velocity_component->velocity[entity_a.id], vel);
       }
     }
   }

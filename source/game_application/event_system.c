@@ -140,3 +140,12 @@ bool event_enqueue(event_queue *q, event *e) {
 
   return true;
 }
+
+void event_enqueue_collision(entity entity_i, entity entity_j) {
+  collision_data *collision = zmalloc(sizeof(*collision));
+
+  collision->a = entity_i;
+  collision->b = entity_j;
+
+  event_trigger(event__queue, collision, COLLISION_EVENT);
+}

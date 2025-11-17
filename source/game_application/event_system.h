@@ -14,5 +14,6 @@ extern event_system *event__system ;
 
 
 bool event_trigger(event_queue *q, void *info, int type);
+void event_enqueue_collision(entity entity_i, entity entity_j) ;
 
 #endif
