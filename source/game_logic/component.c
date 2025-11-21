@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <string.h>
 #include <zot.h>
 
 #include "entity.h"
@@ -14,20 +15,24 @@
 #define CLEAR_BIT(mask, id) ((mask)[(id) / 32] &= ~(1 << ((id) % 32)))
 #define HAS_COMPONENT(component_mask, id) GET_BIT((component_mask), (id))
 
-struct {
+struct
+{
   component_set set;
 } render_component_;
 
-struct {
+struct
+{
   component_set set;
 } physics_component_;
 
-struct {
+struct
+{
   component_set set;
 } network_component_;
 
 bool initialize_component(struct generic_component *component,
-                          uint64_t component_size) {
+                          uint64_t component_size)
+{
   component->set.component_size = component_size;
   component->set.dense = zcalloc(MAX_NO_ENTITY, sizeof(*component->set.dense));
   component->set.sparse =
@@ -37,7 +42,8 @@ bool initialize_component(struct generic_component *component,
   return true;
 }
 
-bool attach_component(entity e, struct generic_component *component) {
+bool attach_component(entity e, struct generic_component *component)
+{
   component_set *set = &component->set;
   if (HAS_COMPONENT(set->mask, e.id))
     return false;
@@ -49,7 +55,8 @@ bool attach_component(entity e, struct generic_component *component) {
   return true;
 }
 
-void detach_component(entity e, struct generic_component *component) {
+void detach_component(entity e, struct generic_component *component)
+{
   component_set *set = &component->set;
   uint8_t *data = (uint8_t *)component->component_data;
   if (!HAS_COMPONENT(set->mask, e.id))

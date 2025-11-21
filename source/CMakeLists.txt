@@ -12,6 +12,8 @@ include(../common.cmake)
 
 # Option to enable or disable phony main
 option(BUILD_PHONY_MAIN "Build phony main" ON)
+option(ENABLE_SANITIZERS "Enable the sanitizers" OFF)
+
 
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -81,8 +83,12 @@ add_library(grey::${TARGET} ALIAS ${TARGET})
 target_include_directories(${TARGET}
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_application>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
   $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(${TARGET} PUBLIC ws2_32)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_compile_features(${TARGET} PUBLIC c_std_23)
@@ -92,7 +98,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
   else()
-    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer )
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
   endif()
   if(ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)

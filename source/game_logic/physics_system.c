@@ -1,50 +1,52 @@
 #include "component.h"
-#include "game_application/event_system.h"
-#include "game_application/game_main.h"
-#include <arm_neon.h>
+#include "event_system.h"
+#include "game_main.h"
+#include "simd.h"
 #include <assert.h>
 #include <math.h>
 #include <zot.h>
 
-struct vec4_st {
+struct vec4_st
+{
   float x, y, z, w;
 };
 
-struct position_component {
+struct position_component
+{
   component_set set;
   struct vec4_st *position;
   struct vec4_st *prev_position;
   struct vec4_st *curr_position;
 };
 
-struct velocity_component {
+struct velocity_component
+{
   component_set set;
-  struct velocity_st {
+  struct velocity_st
+  {
     float x, y, z, w;
   } *velocity;
 };
 
-struct aabb_component {
+struct aabb_component
+{
   component_set set;
-  struct aabb_st {
+  struct aabb_st
+  {
     float x, y, z, _unused;
     float radius;
   } *extent;
   struct vec4_st *prev_timestep_pos;
 };
 
-struct waypoint_component {
+struct waypoint_component
+{
   component_set set;
-  struct waypoint_st {
+  struct waypoint_st
+  {
     float x, y, z, w;
   } *waypoint;
 };
-
-typedef struct {
-  entity a, b;
-  // positions
-  // collision point
-} collision_data;
 
 struct position_component *position_component;
 struct velocity_component *velocity_component;
@@ -54,7 +56,8 @@ struct waypoint_component *waypoint_component;
 float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
                float32x4_t *diff_ptr);
 
-bool initialize_position_component() {
+bool initialize_position_component()
+{
   position_component = zcalloc(1, sizeof(struct position_component));
   position_component->position =
       zcalloc(MAX_NO_ENTITY, sizeof(*position_component->position));
@@ -66,7 +69,8 @@ bool initialize_position_component() {
                               sizeof(struct vec4_st));
 }
 
-bool initialize_velocity_component() {
+bool initialize_velocity_component()
+{
   velocity_component = zcalloc(1, sizeof(struct velocity_component));
   velocity_component->velocity =
       zcalloc(MAX_NO_ENTITY, sizeof(*velocity_component->velocity));
@@ -75,7 +79,8 @@ bool initialize_velocity_component() {
                               sizeof(struct velocity_st));
 }
 
-bool initialize_aabb_component() {
+bool initialize_aabb_component()
+{
   aabb_component = zcalloc(1, sizeof(struct aabb_component));
   aabb_component->extent =
       zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->extent));
@@ -84,7 +89,8 @@ bool initialize_aabb_component() {
                               sizeof(struct aabb_st));
 }
 
-bool initialize_waypoint_component() {
+bool initialize_waypoint_component()
+{
   waypoint_component = zcalloc(1, sizeof(struct waypoint_component));
   waypoint_component->waypoint =
       zcalloc(MAX_NO_ENTITY, sizeof(*waypoint_component->waypoint));
@@ -93,7 +99,8 @@ bool initialize_waypoint_component() {
                               sizeof(struct waypoint_st));
 }
 
-void static __attribute__((__constructor__(200))) init() {
+void static __attribute__((constructor(200))) init()
+{
   initialize_position_component();
   initialize_velocity_component();
   initialize_aabb_component();
@@ -101,7 +108,8 @@ void static __attribute__((__constructor__(200))) init() {
 }
 
 bool aabb_overlap(struct vec4_st *a_pos, struct aabb_st *a_ext,
-                  struct vec4_st *b_pos, struct aabb_st *b_ext) {
+                  struct vec4_st *b_pos, struct aabb_st *b_ext)
+{
 
   auto a_pos_simd = vld1q_f32((float *)a_pos);
   auto b_pos_simd = vld1q_f32((float *)b_pos);
@@ -118,7 +126,8 @@ bool aabb_overlap(struct vec4_st *a_pos, struct aabb_st *a_ext,
          0;
 }
 
-void physics_system_update() {
+void physics_system_update()
+{
   struct vec4_st *prev_pos = position_component->prev_position;
   struct vec4_st *pos = position_component->position;
   struct velocity_st *vel = velocity_component->velocity;
@@ -127,7 +136,8 @@ void physics_system_update() {
   assert(position_component->set.count <= MAX_NO_ENTITY);
   memcpy(prev_pos, pos, position_component->set.count * sizeof(*prev_pos));
 
-  for (uint32_t i = 0; i < velocity_component->set.count; ++i) {
+  for (uint32_t i = 0; i < velocity_component->set.count; ++i)
+  {
     entity entity_id = velocity_component->set.dense[i];
     if (!has_component(entity_id, position_component))
       continue;
@@ -166,9 +176,11 @@ void physics_system_update() {
 
 void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
                             struct aabb_st *extent, float32x4_t *out_min,
-                            float32x4_t *out_max) {
+                            float32x4_t *out_max)
+{
 
-  if (!prev_pos) {
+  if (!prev_pos)
+  {
     prev_pos = curr_pos;
   }
 
@@ -186,16 +198,19 @@ void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
   auto swept_max =
       vmaxq_f32(vaddq_f32(prev, half_extent), vaddq_f32(curr, half_extent));
 
-  if (out_min) {
+  if (out_min)
+  {
     memcpy(out_min, &swept_min, sizeof(swept_min));
   }
-  if (out_max) {
+  if (out_max)
+  {
     memcpy(out_max, &swept_max, sizeof(swept_max));
   }
 }
 
 bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
-                        float32x4_t max_b) {
+                        float32x4_t max_b)
+{
   uint32x4_t le_max = vcleq_f32(min_a, max_b);
   uint32x4_t ge_min = vcleq_f32(min_b, max_a);
   uint32x4_t overlap_mask = vandq_u32(le_max, ge_min);
@@ -207,7 +222,8 @@ bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
   return result[0] && result[1] && result[2];
 }
 
-void resolve_collision(entity entity_i, entity entity_j) {
+void resolve_collision(entity entity_i, entity entity_j)
+{
 
   event_enqueue_collision(entity_i, entity_j);
 
@@ -228,12 +244,14 @@ void resolve_collision(entity entity_i, entity entity_j) {
   vst1q_f32((float *)&velocity_component->velocity[entity_i.id], vel);
 }
 
-void compute_swept_aabb_collision() {
+void compute_swept_aabb_collision()
+{
   struct aabb_st *extents = aabb_component->extent;
   struct vec4_st *curr_positions = position_component->curr_position;
   struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
 
-  for (uint32_t i = 0; i < aabb_component->set.count; ++i) {
+  for (uint32_t i = 0; i < aabb_component->set.count; ++i)
+  {
     entity entity_a = aabb_component->set.dense[i];
 
     if (!has_component(entity_a, position_component))
@@ -246,7 +264,8 @@ void compute_swept_aabb_collision() {
                            prev_positions ? &prev_positions[idx_a] : NULL,
                            &extents[i], &min_a, &max_a);
 
-    for (uint32_t j = i + 1; j < aabb_component->set.count; j++) {
+    for (uint32_t j = i + 1; j < aabb_component->set.count; j++)
+    {
       entity entity_b = aabb_component->set.dense[j];
 
       if (!has_component(entity_b, position_component))
@@ -255,7 +274,8 @@ void compute_swept_aabb_collision() {
 
       float distance_between =
           distance(&curr_positions[idx_a], &curr_positions[idx_b], false, NULL);
-      if (distance_between > (extents[i].radius + extents[j].radius)) {
+      if (distance_between > (extents[i].radius + extents[j].radius))
+      {
         continue;
       }
 
@@ -265,14 +285,16 @@ void compute_swept_aabb_collision() {
                              prev_positions ? &prev_positions[idx_b] : NULL,
                              &extents[j], &min_b, &max_b);
 
-      if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
+      if (check_aabb_overlap(min_a, max_a, min_b, max_b))
+      {
         resolve_collision(entity_a, entity_b);
       }
     }
   }
 }
 
-void interpolate_positions(float interpolation_factor) {
+void interpolate_positions(float interpolation_factor)
+{
 
   void *tmp = aabb_component->prev_timestep_pos;
   if (!tmp)
@@ -289,7 +311,8 @@ void interpolate_positions(float interpolation_factor) {
 
   auto ifac = vdupq_n_f32(interpolation_factor);
 
-  for (uint32_t i = 0; i < position_component->set.count; ++i) {
+  for (uint32_t i = 0; i < position_component->set.count; ++i)
+  {
 
     auto p = vld1q_f32((void *)&pos[i]);
     auto pprev = vld1q_f32((void *)&prev_pos[i]);
@@ -303,7 +326,8 @@ void interpolate_positions(float interpolation_factor) {
   }
 }
 
-struct vec4_st *get_position(entity e) {
+struct vec4_st *get_position(entity e)
+{
   if (!has_component(e, (struct generic_component *)position_component))
     return NULL;
 
@@ -312,7 +336,8 @@ struct vec4_st *get_position(entity e) {
   return &position_component->position[j];
 }
 
-struct velocity_st *get_velocity(entity e) {
+struct velocity_st *get_velocity(entity e)
+{
   if (!has_component(e, (struct generic_component *)velocity_component))
     return NULL;
 
@@ -321,7 +346,8 @@ struct velocity_st *get_velocity(entity e) {
   return &velocity_component->velocity[j];
 }
 
-bool set_velocity(entity e, float *vel) {
+bool set_velocity(entity e, float *vel)
+{
   if (!has_component(e, (struct generic_component *)velocity_component))
 
     return false;
@@ -335,11 +361,13 @@ bool set_velocity(entity e, float *vel) {
   return true;
 }
 
-bool set_entity_velocity(entity e, float x, float y, float z) {
+bool set_entity_velocity(entity e, float x, float y, float z)
+{
   return set_velocity(e, (float[]){x, y, z});
 }
 
-bool set_entity_waypoint(entity e, float x, float y, float z) {
+bool set_entity_waypoint(entity e, float x, float y, float z)
+{
   if (!has_component(e, (struct generic_component *)waypoint_component))
     return false;
 
@@ -352,7 +380,8 @@ bool set_entity_waypoint(entity e, float x, float y, float z) {
   return true;
 }
 
-bool set_entity_aabb_lim(entity e, float x, float y, float z) {
+bool set_entity_aabb_lim(entity e, float x, float y, float z)
+{
   if (!has_component(e, (struct generic_component *)aabb_component))
     return false;
 
@@ -367,7 +396,8 @@ bool set_entity_aabb_lim(entity e, float x, float y, float z) {
   return true;
 }
 
-bool set_entity_position(entity e, float x, float y, float z) {
+bool set_entity_position(entity e, float x, float y, float z)
+{
   if (!has_component(e, (struct generic_component *)position_component))
     return false;
 
@@ -384,7 +414,8 @@ bool set_entity_position(entity e, float x, float y, float z) {
   return true;
 }
 
-struct waypoint_st *get_next_patrol_point(entity e) {
+struct waypoint_st *get_next_patrol_point(entity e)
+{
   if (!has_component(e, (struct generic_component *)waypoint_component))
     return NULL;
 
@@ -393,7 +424,8 @@ struct waypoint_st *get_next_patrol_point(entity e) {
   return &waypoint_component->waypoint[j];
 }
 
-bool advance_patrol_index(entity e) {
+bool advance_patrol_index(entity e)
+{
   if (!has_component(e, (struct generic_component *)waypoint_component))
     return false;
 
