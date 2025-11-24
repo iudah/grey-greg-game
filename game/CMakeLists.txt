@@ -17,8 +17,8 @@ message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 include(ExternalProject)
 
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc"
-  "${CMAKE_BINARY_DIR}/zot/lib/cmake/zot")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/cmake/memalloc"
+  "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/cmake/zot")
 
 find_package(grey QUIET)
 if(NOT TARGET grey::grey)
@@ -35,6 +35,8 @@ target_include_directories(${TARGET}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(${TARGET} PUBLIC pthread)
+target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PRIVATE grey::grey)
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
@@ -43,8 +45,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
   else()
-    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer -lm)
-    target_link_options(${TARGET} PRIVATE -lm)
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
   endif()
   if(ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)

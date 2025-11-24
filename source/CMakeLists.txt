@@ -92,9 +92,10 @@ target_include_directories(${TARGET}
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
   target_link_libraries(${TARGET} PUBLIC ws2_32)
 endif()
+target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PUBLIC pthread)
-target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
+target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
