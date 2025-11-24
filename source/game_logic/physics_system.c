@@ -140,7 +140,7 @@ void physics_system_update()
   for (uint32_t i = 0; i < velocity_component->set.count; ++i)
   {
     entity entity_id = velocity_component->set.dense[i];
-    if (!has_component(entity_id, position_component))
+    if (!has_component(entity_id, (struct generic_component *)position_component))
       continue;
     uint32_t j = position_component->set.sparse[entity_id.id];
 
@@ -255,7 +255,7 @@ void compute_swept_aabb_collision()
   {
     entity entity_a = aabb_component->set.dense[i];
 
-    if (!has_component(entity_a, position_component))
+    if (!has_component(entity_a, (struct generic_component *)position_component))
       continue;
     uint32_t idx_a = position_component->set.sparse[entity_a.id];
 
@@ -269,7 +269,7 @@ void compute_swept_aabb_collision()
     {
       entity entity_b = aabb_component->set.dense[j];
 
-      if (!has_component(entity_b, position_component))
+      if (!has_component(entity_b, (struct generic_component *)position_component))
         continue;
       uint32_t idx_b = position_component->set.sparse[entity_b.id];
 
