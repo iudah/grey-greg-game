@@ -4,6 +4,7 @@
 #include "simd.h"
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include <zot.h>
 
 struct vec4_st

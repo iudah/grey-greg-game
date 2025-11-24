@@ -2,6 +2,7 @@
 #include "physics_system.h"
 #include "simd.h"
 #include <math.h>
+#include <string.h>
 #include <zot.h>
 
 #define ITUNU_EPSILON 1e-5f

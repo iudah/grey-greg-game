@@ -30,7 +30,7 @@ if(NOT TARGET memalloc::memalloc)
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DENABLE_SANITIZERS=${ENABLE_SANITIZERS}
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -57,7 +57,7 @@ if(NOT TARGET zot::zot)
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DENABLE_SANITIZERS=${ENABLE_SANITIZERS}
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -77,7 +77,7 @@ set_target_properties(zot_imported PROPERTIES
 include(sources.cmake)
 include(headers.cmake)
 
-add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
+add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
 add_library(grey::${TARGET} ALIAS ${TARGET})
 
 target_include_directories(${TARGET}
@@ -89,6 +89,7 @@ target_include_directories(${TARGET}
   $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(${TARGET} PUBLIC ws2_32)
+target_link_libraries(${TARGET} PUBLIC pthread)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_compile_features(${TARGET} PUBLIC c_std_23)
@@ -106,11 +107,18 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
   endif()
 endif()
 
-if((CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64") AND NOT MSVC)
+if(NOT MSVC)
   include(CheckCCompilerFlag)
-  check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
-  if(HAS_NEON_FLAG)
-    target_compile_options(${TARGET} PRIVATE -mfpu=neon)
+  if((CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64"))
+    check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
+    if(HAS_NEON_FLAG)
+      target_compile_options(${TARGET} PRIVATE -mfpu=neon)
+    endif()
+  else()
+    check_c_compiler_flag("-msse3" HAS_MSSE3)
+    if(HAS_MSSE3)
+      target_compile_options(${TARGET} PRIVATE -msse3 -march=native)
+    endif()
   endif()
 endif()
 

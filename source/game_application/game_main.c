@@ -46,32 +46,36 @@ static void render_frame(float interpolation_factor);
 bool quit = false;
 ztimespec iter_start, iter_end;
 
-int game_main() {
+int game_main()
+{
   atexit(game_cleanup);
   register_interrupt_signal_handler();
-
 
   get_win32_frequency();
 
   LOG("Game started.");
 
-  if (!get_time_now(&iter_start)) {
+  if (!get_time_now(&iter_start))
+  {
     LOG_ERROR("Failed to get time.");
   }
   double time_elapsed = 0;
   double dt = 0;
 
-  while (!quit) {
+  while (!quit)
+  {
     double frame_time = compute_lapsed_time();
     time_elapsed += frame_time;
 
 #define MAX_ACCUMULATED_TIME 0.25 // Avoid spiral of death
-    if (time_elapsed > MAX_ACCUMULATED_TIME) {
+    if (time_elapsed > MAX_ACCUMULATED_TIME)
+    {
       time_elapsed = MAX_ACCUMULATED_TIME;
     }
 
     // catch up on missed time
-    while (time_elapsed >= TIMESTEP) {
+    while (time_elapsed >= TIMESTEP)
+    {
       // ***
       // LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
       systems_update();
@@ -92,7 +96,8 @@ int game_main() {
   return 0;
 }
 
-static void render_frame(float interpolation_factor) {
+static void render_frame(float interpolation_factor)
+{
   if (interpolation_factor > 1)
     interpolation_factor = 1;
   // render
@@ -102,21 +107,25 @@ static void render_frame(float interpolation_factor) {
 }
 
 #ifdef _WIN32
-bool WINAPI console_handler(DWORD signal) {
-  if (signal == CTRL_C_EVENT) {
+int WINAPI console_handler(DWORD signal)
+{
+  if (signal == CTRL_C_EVENT)
+  {
     quit_game(0);
-    return true;
+    return (int)true;
   }
-  return false;
+  return (int)false;
 }
-static inline void get_win32_frequency() {
+static inline void get_win32_frequency()
+{
   LARGE_INTEGER f;
   QueryPerformanceFrequency(&f);
   freq = (double)f.QuadPart;
 }
 #endif
 
-void register_interrupt_signal_handler() {
+void register_interrupt_signal_handler()
+{
 #ifdef _WIN32
   SetConsoleCtrlHandler(console_handler, true);
 #else
@@ -124,7 +133,8 @@ void register_interrupt_signal_handler() {
 #endif
 }
 
-static inline bool get_time_now(ztimespec *ts) {
+static inline bool get_time_now(ztimespec *ts)
+{
 #ifdef _WIN32
   QueryPerformanceCounter(ts);
   return true;
@@ -133,7 +143,8 @@ static inline bool get_time_now(ztimespec *ts) {
 #endif
 }
 
-static inline double compute_lapsed_time() {
+static inline double compute_lapsed_time()
+{
   get_time_now(&iter_end);
 #ifdef _WIN32
   double time_elapsed = (iter_end.QuadPart - iter_start.QuadPart) / freq;
@@ -145,7 +156,8 @@ static inline double compute_lapsed_time() {
   return time_elapsed;
 }
 
-void quit_game(int signal) {
+void quit_game(int signal)
+{
   LOG("Game ended by %d.", signal);
   quit = true;
 }
