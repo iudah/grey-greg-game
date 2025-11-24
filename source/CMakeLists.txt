@@ -88,7 +88,9 @@ target_include_directories(${TARGET}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(${TARGET} PUBLIC ws2_32)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+  target_link_libraries(${TARGET} PUBLIC ws2_32)
+endif()
 target_link_libraries(${TARGET} PUBLIC pthread)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_link_libraries(${TARGET} PUBLIC zot::zot)

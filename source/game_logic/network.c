@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <zot.h>
+#include <string.h>
 
 bool get_socket(int *sock, char *address, int port)
 {
