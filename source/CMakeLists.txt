@@ -18,6 +18,7 @@ option(ENABLE_SANITIZERS "Enable the sanitizers" OFF)
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
+include(GNUInstallDirs)
 include(ExternalProject)
 
 find_package(memalloc QUIET)
@@ -34,7 +35,7 @@ if(NOT TARGET memalloc::memalloc)
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
-    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include")
@@ -43,7 +44,7 @@ if(NOT TARGET memalloc::memalloc)
   add_library(memalloc::memalloc ALIAS memalloc_imported)
 endif()
 set_target_properties(memalloc_imported PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
 )
 
@@ -61,7 +62,7 @@ if(NOT TARGET zot::zot)
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
-    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/zot/include")
@@ -70,7 +71,7 @@ if(NOT TARGET zot::zot)
   add_library(zot::zot ALIAS zot_imported)
 endif()
 set_target_properties(zot_imported PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/zot/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include"
 )
 
@@ -131,7 +132,6 @@ if(BUILD_PHONY_MAIN)
   target_link_libraries(grey_phony PRIVATE ${TARGET})
 endif()
 
-include(GNUInstallDirs)
 
 install(TARGETS ${TARGET}
   EXPORT GreyTargets
