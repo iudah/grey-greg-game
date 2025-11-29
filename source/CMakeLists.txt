@@ -78,7 +78,7 @@ set_target_properties(zot_imported PROPERTIES
 include(sources.cmake)
 include(headers.cmake)
 
-add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
+add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
 add_library(grey::${TARGET} ALIAS ${TARGET})
 
 target_include_directories(${TARGET}
@@ -86,6 +86,7 @@ target_include_directories(${TARGET}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_application>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/components>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
   $<INSTALL_INTERFACE:include>
 )
