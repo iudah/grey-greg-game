@@ -7,6 +7,7 @@ struct position_component {
   component_set set;
   struct vec4_st *position;
   struct vec4_st *prev_position;
+  // `curr_position` serves for interpolation between positions
   struct vec4_st *curr_position;
 };
 

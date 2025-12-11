@@ -6,8 +6,10 @@
 #include "simd.h"
 #include "velocity_component.h"
 #include "waypoint_component.h"
+#include <arm_neon.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zot.h>
@@ -33,7 +35,7 @@ bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext,
          0;
 }
 
-void physics_system_update() {
+void euler_method() {
   struct vec4_st *prev_pos = position_component->prev_position;
   struct vec4_st *pos = position_component->position;
   struct vec4_st *vel = velocity_component->velocity;
@@ -79,6 +81,41 @@ void physics_system_update() {
   //   }
   // }
 }
+
+void verlet_integration_method() {
+  struct vec4_st *prev_pos_arr = position_component->prev_position;
+  struct vec4_st *pos_arr = position_component->position;
+  struct vec4_st *acc_arr = velocity_component->acceleration;
+
+  auto dt = vdupq_n_f32(TIMESTEP);
+  auto dt_2 = vmulq_f32(dt, dt);
+
+  for (uint32_t i = 0; i < velocity_component->set.count; i++) {
+    entity e = velocity_component->set.dense[i];
+
+    if (!has_component(e, (struct generic_component *)position_component))
+      continue;
+
+    uint32_t p_idx = position_component->set.sparse[e.id];
+    uint32_t a_idx = i;
+
+    auto pcurr = vld1q_f32((float *)&pos_arr[p_idx]);
+    auto pprev = vld1q_f32((float *)&prev_pos_arr[p_idx]);
+    auto acc = vld1q_f32((float *)&acc_arr[a_idx]);
+
+    auto two_pcurr = vmulq_n_f32(pcurr, 2);
+    auto acc_dt2 = vmulq_f32(acc, dt_2);
+    auto pnew = vsubq_f32(vaddq_f32(two_pcurr, acc_dt2), pprev);
+
+    vst1q_f32((float *)&prev_pos_arr[p_idx], pnew);
+  }
+
+  auto temp = position_component->position;
+  position_component->position = position_component->prev_position;
+  position_component->prev_position = temp;
+}
+
+void physics_system_update() { verlet_integration_method(); }
 
 void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
                             struct vec4_st *extent, float32x4_t *out_min,
@@ -245,7 +282,7 @@ struct vec4_st *get_velocity(entity e) {
   return &velocity_component->velocity[j];
 }
 
-bool set_velocity(entity e, float *vel) {
+bool set_euler_velocity(entity e, float *vel) {
   if (!has_component(e, (struct generic_component *)velocity_component))
 
     return false;
@@ -258,6 +295,26 @@ bool set_velocity(entity e, float *vel) {
 
   return true;
 }
+
+bool set_verlet_velocity(entity e, float *vel) {
+  set_euler_velocity(e, vel);
+
+  uint32_t j = position_component->set.sparse[e.id];
+
+  struct vec4_st *pos = &position_component->position[j];
+  struct vec4_st *prev_pos = &position_component->prev_position[j];
+
+  // Todo: Should I use the elapsed time?
+  // But no time is elapsed at the start of set up
+  // What if position changes mid-game, like teleportation?
+  prev_pos->x = pos->x - vel[0] * TIMESTEP;
+  prev_pos->y = pos->y - vel[0] * TIMESTEP;
+  prev_pos->z = pos->z - vel[0] * TIMESTEP;
+
+  return true;
+}
+
+bool set_velocity(entity e, float *vel) { return set_verlet_velocity(e, vel); }
 
 bool set_entity_velocity(entity e, float x, float y, float z) {
   return set_velocity(e, (float[]){x, y, z});
