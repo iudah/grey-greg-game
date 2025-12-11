@@ -17,6 +17,8 @@
 float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
                float32x4_t *diff_ptr);
 
+bool set_velocity(entity e, float *vel);
+
 bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext,
                   struct vec4_st *b_pos, struct vec4_st *b_ext) {
 
@@ -171,22 +173,28 @@ void resolve_collision(entity entity_i, entity entity_j) {
   // ToDo: use momentum based handler (colliding object) / AI based hander
   // (spatial aware)
 
+  float v[4];
+
   float32x4_t vel;
 
   vel = vld1q_f32((float *)&velocity_component->velocity[entity_j.id]);
   vel = vmulq_n_f32(vel, -1);
-  vst1q_f32((float *)&velocity_component->velocity[entity_j.id], vel);
+  vst1q_f32(v, vel);
+
+  set_velocity(entity_j, v);
 
   vel = vld1q_f32((float *)&velocity_component->velocity[entity_i.id]);
   vel = vmulq_n_f32(vel, -1);
-  vst1q_f32((float *)&velocity_component->velocity[entity_i.id], vel);
+  vst1q_f32(v, vel);
+
+  set_velocity(entity_i, v);
 }
 
 void compute_swept_aabb_collision() {
   float *radii = aabb_component->radius;
   struct vec4_st *extents = aabb_component->extent;
   struct vec4_st *last_positions = position_component->position;
-  struct vec4_st *curr_positions = position_component->curr_position;
+  struct vec4_st *curr_positions = position_component->position;
   struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
 
   for (uint32_t i = 0; i < aabb_component->set.count; ++i) {
@@ -308,8 +316,8 @@ bool set_verlet_velocity(entity e, float *vel) {
   // But no time is elapsed at the start of set up
   // What if position changes mid-game, like teleportation?
   prev_pos->x = pos->x - vel[0] * TIMESTEP;
-  prev_pos->y = pos->y - vel[0] * TIMESTEP;
-  prev_pos->z = pos->z - vel[0] * TIMESTEP;
+  prev_pos->y = pos->y - vel[1] * TIMESTEP;
+  prev_pos->z = pos->z - vel[2] * TIMESTEP;
 
   return true;
 }
