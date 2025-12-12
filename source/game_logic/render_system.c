@@ -1,6 +1,7 @@
 #include "aabb_component.h"
 #include "component.h"
 #include "position_component.h"
+#include "render_component.h"
 #include "rotation_component.h"
 #include "scale_component.h"
 #include <inttypes.h>
@@ -23,13 +24,11 @@ char *frame = 0;
 void render() {
   const int width = 240;
   const int height = 320;
+
   if (!frame)
     frame = zcalloc(width * height * 3, sizeof(*frame));
-
-  memset(frame, 0xff, width * height * 3);
-
-  // for (int i = 0; i < width * height * 3; ++i)
-  //   frame[i] = 0xff;
+  else
+    memset(frame, 0xff, width * height * 3);
 
   struct vec4_st *extent = aabb_component->extent;
   entity *e = aabb_component->set.dense;
@@ -38,19 +37,28 @@ void render() {
   for (uint32_t i = 0; i < aabb_component->set.count; i++) {
     uint32_t j = position_component->set.sparse[e[i].id];
 
+    if (!has_component(e[i], (struct generic_component *)render_component))
+      continue;
+
+    uint32_t r_idx = render_component->set.sparse[e[i].id];
+
     struct vec4_st *pos = &position[j];
-    for (float x = pos->x - extent[i].x; x < pos->x + extent[i].x; ++x) {
-      if (x < 0)
+    for (int64_t x = (int64_t)(pos->x - extent[i].x);
+         x < (int64_t)(pos->x + extent[i].x); ++x) {
+
+      if (x < 0 || x >= width)
         continue;
 
-      for (float y = pos->y - extent[i].y; y < pos->y + extent[i].y; ++y) {
-        if (y < 0)
+      for (int64_t y = (int64_t)(pos->y - extent[i].y);
+           y < (int64_t)(pos->y + extent[i].y); ++y) {
+
+        if (y < 0 || y >= height)
           continue;
 
         char *pxl = &frame[(uint32_t)(y * width * 3 + x * 3)];
-        pxl[0] = 0;
-        pxl[1] = 0;
-        pxl[2] = 0;
+        pxl[0] = render_component->color[r_idx].x;
+        pxl[1] = render_component->color[r_idx].y;
+        pxl[2] = render_component->color[r_idx].z;
       }
     }
   }

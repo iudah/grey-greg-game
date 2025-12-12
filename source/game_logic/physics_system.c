@@ -1,6 +1,7 @@
 #include "aabb_component.h"
 #include "component.h"
 #include "event_system.h"
+#include "game_logic.h"
 #include "game_main.h"
 #include "position_component.h"
 #include "simd.h"
@@ -117,7 +118,10 @@ void verlet_integration_method() {
   position_component->prev_position = temp;
 }
 
-void physics_system_update() { verlet_integration_method(); }
+void physics_system_update() {
+  verlet_integration_method();
+  // compute_swept_aabb_collision();
+}
 
 void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
                             struct vec4_st *extent, float32x4_t *out_min,
@@ -194,7 +198,7 @@ void compute_swept_aabb_collision() {
   float *radii = aabb_component->radius;
   struct vec4_st *extents = aabb_component->extent;
   struct vec4_st *last_positions = position_component->position;
-  struct vec4_st *curr_positions = position_component->position;
+  struct vec4_st *curr_positions = position_component->curr_position;
   struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
 
   for (uint32_t i = 0; i < aabb_component->set.count; ++i) {
@@ -224,8 +228,10 @@ void compute_swept_aabb_collision() {
       if (distance_between > (radii[i] + radii[j])) {
         continue;
       }
+
       float32x4_t min_b;
       float32x4_t max_b;
+
       compute_swept_aabb_box(&curr_positions[idx_b],
                              prev_positions ? &prev_positions[idx_b] : NULL,
                              &extents[j], &min_b, &max_b);
@@ -235,6 +241,7 @@ void compute_swept_aabb_collision() {
                sizeof(curr_positions[idx_a]));
         memcpy(&curr_positions[idx_b], &prev_positions[idx_b],
                sizeof(curr_positions[idx_b]));
+
         resolve_collision(entity_a, entity_b);
       }
     }
@@ -245,7 +252,7 @@ void interpolate_positions(float interpolation_factor) {
 
   void *tmp = aabb_component->prev_timestep_pos;
   if (!tmp)
-    tmp = zmalloc(MAX_NO_ENTITY * sizeof(struct vec4_st));
+    tmp = zcalloc(MAX_NO_ENTITY, sizeof(struct vec4_st));
 
   aabb_component->prev_timestep_pos = position_component->curr_position;
   position_component->curr_position = tmp;
@@ -396,15 +403,3 @@ bool advance_patrol_index(entity e) {
 
   return true;
 }
-
-// struct physics_component {
-//   component_set set;
-//   struct vec4_st *velocity;
-//   struct vec4_st *position;
-// };
-
-// struct physics_component *physics_component;
-// bool initialize_physics_component() {
-//   physics_component = zcalloc(1, sizeof(struct physics_component));
-//   return physics_component != NULL;
-// }
