@@ -77,28 +77,6 @@ void euler_method() {
 
     vst1q_f32((void *)&pos[j], p);
   }
-
-  //  min = position - extent, max = position + extent
-
-  // for (uint32_t i = 0; i < aabb_component->set.count; ++i) {
-  //   entity entity_i = aabb_component->set.dense[i];
-  //   uint32_t pos_idx_i = position_component->set.sparse[entity_i.id];
-
-  //   for (uint32_t j = i; j < aabb_component->set.count; j++) {
-  //     entity entity_j = aabb_component->set.dense[j];
-  //     uint32_t pos_idx_j = position_component->set.sparse[entity_j.id];
-
-  //     float gap = distance(&pos[pos_idx_i], &pos[pos_idx_j], false, NULL);
-  //     if (gap > aabb[i].radius && gap > aabb[j].radius) {
-  //       continue;
-  //     }
-
-  // check overlap
-  // if (aabb_overlap(&pos[pos_idx_i], &aabb[i], &pos[pos_idx_j], &aabb[j]))
-  // { collision detected
-  // }
-  //   }
-  // }
 }
 
 void verlet_integration_method() {
@@ -217,46 +195,56 @@ void compute_swept_aabb_collision() {
   struct vec4_st *curr_positions = position_component->curr_position;
   struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
 
-  for (uint32_t i = 0; i < aabb_component->set.count; ++i) {
-    entity entity_a = aabb_component->set.dense[i];
+  for (uint32_t aabb_i = 0; aabb_i < aabb_component->set.count; ++aabb_i) {
+    entity entity_a = aabb_component->set.dense[aabb_i];
 
     if (!has_component(entity_a,
                        (struct generic_component *)position_component))
       continue;
-    uint32_t idx_a = position_component->set.sparse[entity_a.id];
+    uint32_t pos_i = position_component->set.sparse[entity_a.id];
 
     float32x4_t min_a;
     float32x4_t max_a;
-    compute_swept_aabb_box(&curr_positions[idx_a],
-                           prev_positions ? &prev_positions[idx_a] : NULL,
-                           &extents[i], &min_a, &max_a);
+    compute_swept_aabb_box(&curr_positions[pos_i],
+                           prev_positions ? &prev_positions[aabb_i] : NULL,
+                           &extents[aabb_i], &min_a, &max_a);
 
-    for (uint32_t j = i + 1; j < aabb_component->set.count; j++) {
-      entity entity_b = aabb_component->set.dense[j];
+    for (uint32_t aabb_j = aabb_i + 1; aabb_j < aabb_component->set.count;
+         ++aabb_j) {
+      entity entity_b = aabb_component->set.dense[aabb_j];
 
       if (!has_component(entity_b,
                          (struct generic_component *)position_component))
         continue;
-      uint32_t idx_b = position_component->set.sparse[entity_b.id];
+      uint32_t pos_j = position_component->set.sparse[entity_b.id];
 
       float distance_between =
-          distance(&curr_positions[idx_a], &curr_positions[idx_b], false, NULL);
-      if (distance_between > (radii[i] + radii[j])) {
+          distance(&curr_positions[pos_i], &curr_positions[pos_j], false, NULL);
+      if (distance_between > (radii[aabb_i] + radii[aabb_j])) {
         continue;
       }
 
       float32x4_t min_b;
       float32x4_t max_b;
 
-      compute_swept_aabb_box(&curr_positions[idx_b],
-                             prev_positions ? &prev_positions[idx_b] : NULL,
-                             &extents[j], &min_b, &max_b);
+      compute_swept_aabb_box(&curr_positions[pos_j],
+                             prev_positions ? &prev_positions[aabb_j] : NULL,
+                             &extents[aabb_j], &min_b, &max_b);
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
-        memcpy(&curr_positions[idx_a], &prev_positions[idx_a],
-               sizeof(curr_positions[idx_a]));
-        memcpy(&curr_positions[idx_b], &prev_positions[idx_b],
-               sizeof(curr_positions[idx_b]));
+        // damn! what if an entity falls into water, it is not Jesus or Peter, right?
+
+        // reverse aabb position
+        memcpy(&curr_positions[pos_i], &prev_positions[aabb_i],
+               sizeof(curr_positions[pos_i]));
+        memcpy(&curr_positions[pos_j], &prev_positions[aabb_j],
+               sizeof(curr_positions[pos_j]));
+
+        // set physics position to aabb position
+        memcpy(&last_positions[pos_i], &prev_positions[aabb_i],
+               sizeof(last_positions[pos_i]));
+        memcpy(&last_positions[pos_j], &prev_positions[aabb_j],
+               sizeof(last_positions[pos_j]));
 
         resolve_collision(entity_a, entity_b);
       }

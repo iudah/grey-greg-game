@@ -30,8 +30,10 @@ void static __attribute__((constructor(202))) init() {
 bool register_system(system_update_fn_t system) {
   if (manager.no_system < manager.system_cap) {
     manager.system[manager.no_system++] = system;
-  }
-  return true;
+   return true;
+ }
+ 
+ return false;
 }
 
 void systems_update() {

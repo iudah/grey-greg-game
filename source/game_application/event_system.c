@@ -51,6 +51,7 @@ typedef struct {
 } collision_data;
 
 bool event_enqueue(event_queue *q, event *e);
+bool event_destroy(event *e);
 
 void *create_event_system() { return zcalloc(1, sizeof(event_system)); }
 
@@ -96,6 +97,9 @@ void event_handler_broadcast(event_system *system, event_queue *queue) {
 
     event *event = queue->queue[queue->head];
 
+    // let zot handle cleaning automatically
+     queue->queue[queue->head]=0;
+
     for (int i = 0; i < system->no_event_handler; ++i) {
       if (event->type) {
         system->event_handler[i](event);
@@ -130,6 +134,15 @@ bool event_trigger(event_queue *q, void *info, int type) {
 
   return event_enqueue(q, e);
 }
+
+// bool event_destroy(event* e) {
+//   event *e = zmalloc(sizeof((*e)));
+
+//   e->info = info;
+//   e->type = type;
+
+//   return event_enqueue(q, e);
+// }
 
 bool event_enqueue(event_queue *q, event *e) {
   if (q->tail == q->no_event)
