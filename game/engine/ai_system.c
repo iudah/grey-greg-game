@@ -2,6 +2,7 @@
 #include "component.h"
 #include "physics_system.h"
 #include "simd.h"
+#include "systems_manager.h"
 #include <math.h>
 #include <string.h>
 #include <zot.h>
@@ -20,23 +21,7 @@
 #define WAYPOINT_THRESHOLD ITUNU_EPSILON
 
 float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
-               float32x4_t *diff_ptr) {
-  auto n_pos = vld1q_f32((float *)npc_pos);
-  auto p_pos = vld1q_f32((float *)player_pos);
-
-  auto diff = flee ? vsubq_f32(n_pos, p_pos) : vsubq_f32(p_pos, n_pos);
-  diff = vsetq_lane_f32(0, diff, 3); // zero 'w'
-
-  if (diff_ptr) {
-    memcpy(diff_ptr, &diff, sizeof(diff));
-  }
-
-  auto diff2 = vmulq_f32(diff, diff);
-  auto sum = vadd_f32(vget_high_f32(diff2), vget_low_f32(diff2));
-  sum = vpadd_f32(sum, sum);
-
-  return sqrtf(vget_lane_f32(sum, 0));
-}
+               float32x4_t *diff_ptr);
 
 void flee(entity e, struct vec4_st *player_pos, float vel[4]) {
   float32x4_t diff;
@@ -204,4 +189,9 @@ void ai_system_update() {
       break;
     }
   }
+}
+
+void static __attribute__((constructor(202))) init() {
+  initialize_ai_component();
+  register_system((system_update_fn_t)ai_system_update);
 }

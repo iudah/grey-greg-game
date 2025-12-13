@@ -15,10 +15,26 @@
 #include <string.h>
 #include <zot.h>
 
-float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
-               float32x4_t *diff_ptr);
-
 bool set_velocity(entity e, float *vel);
+
+float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
+               float32x4_t *diff_ptr) {
+  auto n_pos = vld1q_f32((float *)npc_pos);
+  auto p_pos = vld1q_f32((float *)player_pos);
+
+  auto diff = flee ? vsubq_f32(n_pos, p_pos) : vsubq_f32(p_pos, n_pos);
+  diff = vsetq_lane_f32(0, diff, 3); // zero 'w'
+
+  if (diff_ptr) {
+    memcpy(diff_ptr, &diff, sizeof(diff));
+  }
+
+  auto diff2 = vmulq_f32(diff, diff);
+  auto sum = vadd_f32(vget_high_f32(diff2), vget_low_f32(diff2));
+  sum = vpadd_f32(sum, sum);
+
+  return sqrtf(vget_lane_f32(sum, 0));
+}
 
 bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext,
                   struct vec4_st *b_pos, struct vec4_st *b_ext) {

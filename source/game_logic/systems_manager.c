@@ -1,11 +1,42 @@
-#include "game_logic.h"
+#include "systems_manager.h"
 
-void ai_system_update();
+#include "game_logic.h"
+#include "event_system.h"
+#include <zot.h>
+
+#define MAX_SYSTEM 32
+
+typedef struct {
+  system_update_fn_t *system;
+  uint32_t no_system;
+  uint32_t system_cap;
+} system_manager;
+
+bool register_system(system_update_fn_t system);
 void physics_system_update();
 void render_system_update();
 
+static system_manager manager;
+
+void static __attribute__((constructor(202))) init() {
+  manager.system_cap = MAX_SYSTEM;
+  manager.system = zmalloc(manager.system_cap * sizeof(*manager.system));
+  manager.no_system = 0;
+
+  register_system((system_update_fn_t)physics_system_update);
+  register_system((system_update_fn_t)render_system_update);
+}
+
+bool register_system(system_update_fn_t system) {
+  if (manager.no_system < manager.system_cap) {
+    manager.system[manager.no_system++] = system;
+  }
+  return true;
+}
+
 void systems_update() {
-  ai_system_update();
-  physics_system_update();
-  render_system_update();
+  event_default_broadcast();
+  for (uint32_t i = 0; i < manager.no_system; ++i) {
+    manager.system[i]();
+  }
 }
