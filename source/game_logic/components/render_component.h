@@ -9,9 +9,11 @@
 
 struct render_component {
   component_set set;
-  // struct vec4_st *scale;
-  // struct vec4_st *rotation;
-  struct vec4_st *color;
+  struct {
+    // struct vec4_st *scale;
+    // struct vec4_st *rotation;
+    struct vec4_st *color;
+  } *streams;
 };
 
 extern struct render_component *render_component;

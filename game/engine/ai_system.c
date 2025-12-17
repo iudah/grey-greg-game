@@ -91,10 +91,12 @@ void patrol(entity e, float vel[4]) {
 
 void idle(entity e) { set_velocity(e, (float[3]){0, 0, 0}); }
 
-ai_state get_ai_state(entity npc) { return ai_component->state[npc.id]; }
+ai_state get_ai_state(entity npc) {
+  return ai_component->streams->state[npc.id];
+}
 
 void ai_update_state(entity npc, entity player) {
-  ai_state *states = ai_component->state;
+  ai_state *states = ai_component->streams->state;
 
   struct vec4_st *npc_pos = get_position(npc);
   struct vec4_st *player_pos = get_position(player);
@@ -148,7 +150,7 @@ void ai_update_state(entity npc, entity player) {
 }
 
 void ai_system_update() {
-  ai_state *states = ai_component->state;
+  ai_state *states = ai_component->streams->state;
   float velocity[4];
   extern entity player;
 

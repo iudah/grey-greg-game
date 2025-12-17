@@ -5,9 +5,11 @@
 
 struct verlet_component {
   component_set set;
-  struct vec4_st {
-    float x, y, z, w;
-  } *acceleration;
+  struct {
+    struct vec4_st {
+      float x, y, z, w;
+    } *acceleration;
+  } *streams;
 };
 
 extern struct verlet_component *verlet_component;

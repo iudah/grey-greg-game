@@ -1,15 +1,24 @@
 #include "aabb_component.h"
+#include <stdint.h>
 #include <zot.h>
 
 struct aabb_component *aabb_component;
 
 bool initialize_aabb_component() {
   aabb_component = zcalloc(1, sizeof(struct aabb_component));
-  aabb_component->extent =
-      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->extent));
-  aabb_component->radius =
-      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->radius));
-  return aabb_component != NULL &&
-         initialize_component((struct generic_component *)aabb_component,
-                              sizeof(struct vec4_st));
+  auto component = (struct generic_component *)aabb_component;
+
+  bool component_intialized = initialize_component(
+      component,
+      (uint64_t[]){sizeof(*aabb_component->streams->extent),
+                   sizeof(*aabb_component->streams->radius),
+                   sizeof(*aabb_component->streams->prev_timestep_pos)},
+      sizeof(*aabb_component->streams) / sizeof(void *));
+
+  aabb_component->streams->extent =
+      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->extent));
+  aabb_component->streams->radius =
+      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->radius));
+
+  return aabb_component != NULL && component_intialized;
 }

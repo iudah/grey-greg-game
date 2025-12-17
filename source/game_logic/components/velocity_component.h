@@ -5,9 +5,11 @@
 
 struct velocity_component {
   component_set set;
-  struct vec4_st {
-    float x, y, z, w;
-  } *velocity, *acceleration;
+  struct {
+    struct vec4_st {
+      float x, y, z, w;
+    } *velocity, *acceleration;
+  } *streams;
 };
 
 extern struct velocity_component *velocity_component;

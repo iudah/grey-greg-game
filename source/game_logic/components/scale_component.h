@@ -1,11 +1,13 @@
 #ifndef SCALE_COMPONENT_H
 #define SCALE_COMPONENT_H
 
-#include "component.h"
+#include "component_base.h"
 
 struct scale_component {
   component_set set;
-  struct vec4_st *scale;
+  struct {
+    struct vec4_st *scale;
+  } *streams;
 };
 
 extern struct scale_component *scale_component;

@@ -55,10 +55,10 @@ bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext,
 }
 
 void euler_method() {
-  struct vec4_st *prev_pos = position_component->prev_position;
-  struct vec4_st *pos = position_component->position;
-  struct vec4_st *vel = velocity_component->velocity;
-  struct vec4_st *aabb = aabb_component->extent;
+  struct vec4_st *prev_pos = position_component->stream->prev_position;
+  struct vec4_st *pos = position_component->stream->position;
+  struct vec4_st *vel = velocity_component->streams->velocity;
+  struct vec4_st *aabb = aabb_component->streams->extent;
 
   assert(position_component->set.count <= MAX_NO_ENTITY);
   memcpy(prev_pos, pos, position_component->set.count * sizeof(*prev_pos));
@@ -80,9 +80,9 @@ void euler_method() {
 }
 
 void verlet_integration_method() {
-  struct vec4_st *prev_pos_arr = position_component->prev_position;
-  struct vec4_st *pos_arr = position_component->position;
-  struct vec4_st *acc_arr = velocity_component->acceleration;
+  struct vec4_st *prev_pos_arr = position_component->stream->prev_position;
+  struct vec4_st *pos_arr = position_component->stream->position;
+  struct vec4_st *acc_arr = velocity_component->streams->acceleration;
 
   auto dt = vdupq_n_f32(TIMESTEP);
   auto dt_2 = vmulq_f32(dt, dt);
@@ -107,9 +107,10 @@ void verlet_integration_method() {
     vst1q_f32((float *)&prev_pos_arr[p_idx], pnew);
   }
 
-  auto temp = position_component->position;
-  position_component->position = position_component->prev_position;
-  position_component->prev_position = temp;
+  auto temp = position_component->stream->position;
+  position_component->stream->position =
+      position_component->stream->prev_position;
+  position_component->stream->prev_position = temp;
 }
 
 void physics_system_update() {
@@ -171,19 +172,17 @@ void resolve_collision(entity entity_i, entity entity_j) {
   // ToDo: use momentum based handler (colliding object) / AI based hander
   // (spatial aware)
 
-  return;
-
   float v[4];
 
   float32x4_t vel;
 
-  vel = vld1q_f32((float *)&velocity_component->velocity[entity_j.id]);
+  vel = vld1q_f32((float *)&velocity_component->streams->velocity[entity_j.id]);
   vel = vmulq_n_f32(vel, -1);
   vst1q_f32(v, vel);
 
   set_velocity(entity_j, v);
 
-  vel = vld1q_f32((float *)&velocity_component->velocity[entity_i.id]);
+  vel = vld1q_f32((float *)&velocity_component->streams->velocity[entity_i.id]);
   vel = vmulq_n_f32(vel, -1);
   vst1q_f32(v, vel);
 
@@ -191,11 +190,11 @@ void resolve_collision(entity entity_i, entity entity_j) {
 }
 
 void compute_swept_aabb_collision() {
-  float *radii = aabb_component->radius;
-  struct vec4_st *extents = aabb_component->extent;
-  struct vec4_st *last_positions = position_component->position;
-  struct vec4_st *curr_positions = position_component->curr_position;
-  struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
+  float *radii = aabb_component->streams->radius;
+  struct vec4_st *extents = aabb_component->streams->extent;
+  struct vec4_st *last_positions = position_component->stream->position;
+  struct vec4_st *curr_positions = position_component->stream->curr_position;
+  struct vec4_st *prev_positions = aabb_component->streams->prev_timestep_pos;
 
   if (!prev_positions)
     prev_positions = last_positions;
@@ -261,18 +260,21 @@ void compute_swept_aabb_collision() {
 
 void interpolate_positions(float interpolation_factor) {
 
-  void *tmp = aabb_component->prev_timestep_pos;
+  void *tmp = aabb_component->streams->prev_timestep_pos;
   if (!tmp)
     tmp = zcalloc(MAX_NO_ENTITY, sizeof(struct vec4_st));
 
-  aabb_component->prev_timestep_pos = position_component->curr_position;
-  position_component->curr_position = tmp;
+  // ToDo: deep copy current position
 
-  struct vec4_st *prev_pos = position_component->prev_position;
-  struct vec4_st *pos = position_component->position;
-  struct vec4_st *curr_pos = position_component->curr_position;
+  aabb_component->streams->prev_timestep_pos =
+      position_component->stream->curr_position;
+  position_component->stream->curr_position = tmp;
 
-  struct vec4_st *aabb = aabb_component->extent;
+  struct vec4_st *prev_pos = position_component->stream->prev_position;
+  struct vec4_st *pos = position_component->stream->position;
+  struct vec4_st *curr_pos = position_component->stream->curr_position;
+
+  struct vec4_st *aabb = aabb_component->streams->extent;
 
   auto ifac = vdupq_n_f32(interpolation_factor);
 
@@ -296,7 +298,7 @@ struct vec4_st *get_position(entity e) {
 
   uint32_t j = position_component->set.sparse[e.id];
 
-  return &position_component->position[j];
+  return &position_component->stream->position[j];
 }
 
 struct vec4_st *get_velocity(entity e) {
@@ -305,7 +307,7 @@ struct vec4_st *get_velocity(entity e) {
 
   uint32_t j = velocity_component->set.sparse[e.id];
 
-  return &velocity_component->velocity[j];
+  return &velocity_component->streams->velocity[j];
 }
 
 bool set_euler_velocity(entity e, float *vel) {
@@ -315,9 +317,9 @@ bool set_euler_velocity(entity e, float *vel) {
 
   uint32_t j = velocity_component->set.sparse[e.id];
 
-  velocity_component->velocity[j].x = vel[0];
-  velocity_component->velocity[j].y = vel[1];
-  velocity_component->velocity[j].z = vel[2];
+  velocity_component->streams->velocity[j].x = vel[0];
+  velocity_component->streams->velocity[j].y = vel[1];
+  velocity_component->streams->velocity[j].z = vel[2];
 
   return true;
 }
@@ -327,8 +329,8 @@ bool set_verlet_velocity(entity e, float *vel) {
 
   uint32_t j = position_component->set.sparse[e.id];
 
-  struct vec4_st *pos = &position_component->position[j];
-  struct vec4_st *prev_pos = &position_component->prev_position[j];
+  struct vec4_st *pos = &position_component->stream->position[j];
+  struct vec4_st *prev_pos = &position_component->stream->prev_position[j];
 
   // Todo: Should I use the elapsed time?
   // But no time is elapsed at the start of set up
@@ -352,9 +354,9 @@ bool set_entity_waypoint(entity e, float x, float y, float z) {
 
   uint32_t j = waypoint_component->set.sparse[e.id];
 
-  waypoint_component->waypoint[j].x = x;
-  waypoint_component->waypoint[j].y = y;
-  waypoint_component->waypoint[j].z = z;
+  waypoint_component->streams->waypoint[j].x = x;
+  waypoint_component->streams->waypoint[j].y = y;
+  waypoint_component->streams->waypoint[j].z = z;
 
   return true;
 }
@@ -365,11 +367,11 @@ bool set_entity_aabb_lim(entity e, float x, float y, float z) {
 
   uint32_t j = aabb_component->set.sparse[e.id];
 
-  aabb_component->extent[j].x = x;
-  aabb_component->extent[j].y = y;
-  aabb_component->extent[j].z = z;
+  aabb_component->streams->extent[j].x = x;
+  aabb_component->streams->extent[j].y = y;
+  aabb_component->streams->extent[j].z = z;
 
-  aabb_component->radius[j] = sqrtf(x * x + y * y + z * z);
+  aabb_component->streams->radius[j] = sqrtf(x * x + y * y + z * z);
 
   return true;
 }
@@ -380,13 +382,13 @@ bool set_entity_position(entity e, float x, float y, float z) {
 
   uint32_t j = position_component->set.sparse[e.id];
 
-  position_component->position[j].x = x;
-  position_component->position[j].y = y;
-  position_component->position[j].z = z;
+  position_component->stream->position[j].x = x;
+  position_component->stream->position[j].y = y;
+  position_component->stream->position[j].z = z;
 
-  position_component->prev_position[j].x = x;
-  position_component->prev_position[j].y = y;
-  position_component->prev_position[j].z = z;
+  position_component->stream->prev_position[j].x = x;
+  position_component->stream->prev_position[j].y = y;
+  position_component->stream->prev_position[j].z = z;
 
   return true;
 }
@@ -397,7 +399,7 @@ struct vec4_st *get_next_patrol_point(entity e) {
 
   uint32_t j = waypoint_component->set.sparse[e.id];
 
-  return &waypoint_component->waypoint[j];
+  return &waypoint_component->streams->waypoint[j];
 }
 
 bool advance_patrol_index(entity e) {
@@ -408,9 +410,9 @@ bool advance_patrol_index(entity e) {
 
   // TODO: Use angle of view to randomly choose waypoint
 
-  waypoint_component->waypoint[j].x++;
-  waypoint_component->waypoint[j].y++;
-  waypoint_component->waypoint[j].z++;
+  waypoint_component->streams->waypoint[j].x++;
+  waypoint_component->streams->waypoint[j].y++;
+  waypoint_component->streams->waypoint[j].z++;
 
   return true;
 }

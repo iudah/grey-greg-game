@@ -5,9 +5,11 @@
 
 struct waypoint_component {
   component_set set;
-  struct vec4_st {
-    float x, y, z, w;
-  } *waypoint;
+  struct {
+    struct vec4_st {
+      float x, y, z, w;
+    } *waypoint;
+  } *streams;
 };
 
 extern struct waypoint_component *waypoint_component;

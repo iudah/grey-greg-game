@@ -12,8 +12,8 @@
 #include <zot.h>
 
 void render_system_update() {
-  struct vec4_st *rot = rotation_component->rotation;
-  struct vec4_st *scale = scale_component->scale;
+  struct vec4_st *rot = rotation_component->streams->rotation;
+  struct vec4_st *scale = scale_component->streams->scale;
 
   for (uint32_t i = 0; i < scale_component->set.count; ++i) {
     // compute transform matrix
@@ -31,9 +31,9 @@ void render() {
   else
     memset(frame, 0xff, width * height * 3);
 
-  struct vec4_st *extent = aabb_component->extent;
+  struct vec4_st *extent = aabb_component->streams->extent;
   entity *e = aabb_component->set.dense;
-  struct vec4_st *position = position_component->curr_position;
+  struct vec4_st *position = position_component->stream->curr_position;
 
   for (uint32_t i = 0; i < aabb_component->set.count; i++) {
     uint32_t j = position_component->set.sparse[e[i].id];
@@ -57,9 +57,9 @@ void render() {
           continue;
 
         char *pxl = &frame[(uint32_t)(y * width * 3 + x * 3)];
-        pxl[0] = render_component->color[r_idx].x;
-        pxl[1] = render_component->color[r_idx].y;
-        pxl[2] = render_component->color[r_idx].z;
+        pxl[0] = render_component->streams->color[r_idx].x;
+        pxl[1] = render_component->streams->color[r_idx].y;
+        pxl[2] = render_component->streams->color[r_idx].z;
       }
     }
   }

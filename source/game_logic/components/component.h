@@ -9,13 +9,14 @@ typedef struct {
   entity *dense;
   uint32_t *sparse;
   uint32_t *mask;
+  uint64_t *streams_sizes;
   uint32_t count;
-  uint64_t component_size;
+  uint8_t no_of_stream;
 } component_set;
 
 struct generic_component {
   component_set set;
-  void *component_data;
+  void **streams;
 };
 
 typedef bool (*set_entity_component_value_fn)(entity e, ...);
@@ -28,7 +29,7 @@ bool set_entity_waypoint(entity e, float x, float y, float z);
 bool attach_component(entity e, struct generic_component *component);
 void detach_component(entity e, struct generic_component *component);
 bool initialize_component(struct generic_component *component,
-                          uint64_t component_size);
+                          uint64_t *component_size, uint8_t no_of_stream);
 
 static inline bool has_component(entity e,
                                  struct generic_component *component) {

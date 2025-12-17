@@ -5,7 +5,9 @@
 
 struct rotation_component {
   component_set set;
-  struct vec4_st *rotation;
+  struct {
+    struct vec4_st *rotation;
+  } *streams;
 };
 
 extern struct rotation_component *rotation_component;
