@@ -10,6 +10,7 @@ game_logic/render_system.c
 game_logic/systems_manager.c
 game_logic/components/position_component.c
 game_logic/components/render_component.c
+game_logic/components/verlet_component.c
 game_logic/components/component_manager.c
 game_logic/components/component.c
 game_logic/components/aabb_component.c

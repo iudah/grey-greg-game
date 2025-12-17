@@ -4,6 +4,9 @@
 #include "component_base.h"
 #include <stdint.h>
 
+#define SCREEN_X 960
+#define SCREEN_Y 720
+
 struct render_component {
   component_set set;
   // struct vec4_st *scale;

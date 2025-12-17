@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <zot.h>
 
@@ -22,8 +23,8 @@ void render_system_update() {
 uint64_t count = 0;
 char *frame = 0;
 void render() {
-  const int width = 240;
-  const int height = 320;
+  const int width = SCREEN_X;
+  const int height = SCREEN_Y;
 
   if (!frame)
     frame = zcalloc(width * height * 3, sizeof(*frame));
@@ -63,15 +64,22 @@ void render() {
     }
   }
 
+  if (count == 1000)
+    exit(0);
+
   char path[255];
   snprintf(path, 255, "tmp/img_%08" PRIu64 ".ppm", count++);
   FILE *f = fopen(path, "wb");
 
-  fprintf(f,
-          "P6\n"
-          "%d %d\n"
-          "255\n",
-          width, height);
-  fwrite(frame, sizeof(*frame), width * height * 3, f);
-  fclose(f);
+  if (0) {
+    LOG("`tmp/img_%08" PRIu64 ".ppm` could not be open.", count - 1);
+  } else {
+    fprintf(f,
+            "P6\n"
+            "%d %d\n"
+            "255\n",
+            width, height);
+    fwrite(frame, sizeof(*frame), width * height * 3, f);
+    fclose(f);
+  }
 }

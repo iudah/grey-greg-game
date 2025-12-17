@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 bool initialize_all_components() {
-  printf("Initing stuff...");
+  printf("Initing stuff...\n");
   return initialize_position_component() && initialize_velocity_component() &&
          initialize_aabb_component() && initialize_waypoint_component() &&
          initialize_rotation_component() && initialize_scale_component() &&

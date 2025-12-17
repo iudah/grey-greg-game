@@ -171,6 +171,8 @@ void resolve_collision(entity entity_i, entity entity_j) {
   // ToDo: use momentum based handler (colliding object) / AI based hander
   // (spatial aware)
 
+  return;
+
   float v[4];
 
   float32x4_t vel;
@@ -194,6 +196,9 @@ void compute_swept_aabb_collision() {
   struct vec4_st *last_positions = position_component->position;
   struct vec4_st *curr_positions = position_component->curr_position;
   struct vec4_st *prev_positions = aabb_component->prev_timestep_pos;
+
+  if (!prev_positions)
+    prev_positions = last_positions;
 
   for (uint32_t aabb_i = 0; aabb_i < aabb_component->set.count; ++aabb_i) {
     entity entity_a = aabb_component->set.dense[aabb_i];
@@ -232,7 +237,9 @@ void compute_swept_aabb_collision() {
                              &extents[aabb_j], &min_b, &max_b);
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
-        // damn! what if an entity falls into water, it is not Jesus or Peter, right?
+#if 0
+        // damn! what if an entity falls into water, it is not Jesus or Peter,
+        // right?
 
         // reverse aabb position
         memcpy(&curr_positions[pos_i], &prev_positions[aabb_i],
@@ -245,7 +252,7 @@ void compute_swept_aabb_collision() {
                sizeof(last_positions[pos_i]));
         memcpy(&last_positions[pos_j], &prev_positions[aabb_j],
                sizeof(last_positions[pos_j]));
-
+#endif
         resolve_collision(entity_a, entity_b);
       }
     }

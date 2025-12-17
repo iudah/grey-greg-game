@@ -11,6 +11,7 @@ game_logic/simd.h
 game_logic/components/component_base.h
 game_logic/components/position_component.h
 game_logic/components/render_component.h
+game_logic/components/verlet_component.h
 game_logic/components/component.h
 game_logic/components/component_manager.h
 game_logic/components/aabb_component.h

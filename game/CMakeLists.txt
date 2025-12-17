@@ -10,7 +10,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 include(../common.cmake)
 
-option(ENABLE_SANITIZERS "Enable the sanitizers" OFF)
+option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
 
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")

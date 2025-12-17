@@ -12,7 +12,7 @@ include(../common.cmake)
 
 # Option to enable or disable phony main
 option(BUILD_PHONY_MAIN "Build phony main" ON)
-option(ENABLE_SANITIZERS "Enable the sanitizers" OFF)
+option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
 
 
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
@@ -31,7 +31,7 @@ if(NOT TARGET memalloc::memalloc)
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DENABLE_SANITIZERS=${ENABLE_SANITIZERS}
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF 
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -58,7 +58,7 @@ if(NOT TARGET zot::zot)
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DENABLE_SANITIZERS=${ENABLE_SANITIZERS}
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF 
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -104,7 +104,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
   else()
-    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer -DZ_USE_ASAN=1)
   endif()
   if(ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)

@@ -1,4 +1,7 @@
 {
   // Required in Termux Android environment
-  "cmake.buildDirectory": "${env:HOME}/${workspaceFolderBasename}/build"
+  "cmake.buildDirectory": "${env:HOME}/${workspaceFolderBasename}/build",
+  "cmake.configureSettings": {
+    "ENABLE_SANITIZERS": "off"
+  }
 }
