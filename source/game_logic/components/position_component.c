@@ -10,13 +10,15 @@ bool initialize_position_component() {
       (struct generic_component *)position_component,
       (uint64_t[]){sizeof(*position_component->stream->position),
                    sizeof(*position_component->stream->prev_position),
-                   sizeof(*position_component->stream->curr_position)},
+                   sizeof(*position_component->stream->curr_position),
+                   sizeof(*position_component->stream->prev_timestep_pos)},
       sizeof(*position_component->stream) / sizeof(void *));
 
-  position_component->stream->position =
-      zcalloc(MAX_NO_ENTITY, sizeof(*position_component->stream->position));
-  position_component->stream->prev_position = zcalloc(
-      MAX_NO_ENTITY, sizeof(*position_component->stream->prev_position));
+  //   position_component->stream->position =
+  //       zcalloc(MAX_NO_ENTITY,
+  //       sizeof(*position_component->stream->position));
+  //   position_component->stream->prev_position = zcalloc(
+  //       MAX_NO_ENTITY, sizeof(*position_component->stream->prev_position));
 
   return position_component != NULL && component_intialized;
 }

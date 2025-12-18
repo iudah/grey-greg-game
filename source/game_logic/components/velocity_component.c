@@ -13,10 +13,11 @@ bool initialize_velocity_component() {
                    sizeof(*velocity_component->streams->acceleration)},
       sizeof(*velocity_component->streams) / sizeof(void *));
 
-  velocity_component->streams->velocity =
-      zcalloc(MAX_NO_ENTITY, sizeof(*velocity_component->streams->velocity));
-  velocity_component->streams->acceleration = zcalloc(
-      MAX_NO_ENTITY, sizeof(*velocity_component->streams->acceleration));
+  //   velocity_component->streams->velocity =
+  //       zcalloc(MAX_NO_ENTITY,
+  //       sizeof(*velocity_component->streams->velocity));
+  //   velocity_component->streams->acceleration = zcalloc(
+  //       MAX_NO_ENTITY, sizeof(*velocity_component->streams->acceleration));
 
   return velocity_component != NULL && component_intialized;
 }

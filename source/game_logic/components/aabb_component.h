@@ -8,7 +8,6 @@ struct aabb_component {
   struct {
     struct vec4_st *extent;
     float *radius;
-    struct vec4_st *prev_timestep_pos;
   } *streams;
 };
 

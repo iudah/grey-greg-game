@@ -11,14 +11,13 @@ bool initialize_aabb_component() {
   bool component_intialized = initialize_component(
       component,
       (uint64_t[]){sizeof(*aabb_component->streams->extent),
-                   sizeof(*aabb_component->streams->radius),
-                   sizeof(*aabb_component->streams->prev_timestep_pos)},
+                   sizeof(*aabb_component->streams->radius)},
       sizeof(*aabb_component->streams) / sizeof(void *));
 
-  aabb_component->streams->extent =
-      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->extent));
-  aabb_component->streams->radius =
-      zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->radius));
+  //   aabb_component->streams->extent =
+  //       zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->extent));
+  //   aabb_component->streams->radius =
+  //       zcalloc(MAX_NO_ENTITY, sizeof(*aabb_component->streams->radius));
 
   return aabb_component != NULL && component_intialized;
 }

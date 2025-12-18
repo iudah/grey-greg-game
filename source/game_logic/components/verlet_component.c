@@ -12,8 +12,9 @@ bool initialize_verlet_component() {
       (uint64_t[]){sizeof(*verlet_component->streams->acceleration)},
       sizeof(*verlet_component->streams) / sizeof(void *));
 
-  verlet_component->streams->acceleration =
-      zcalloc(MAX_NO_ENTITY, sizeof(*verlet_component->streams->acceleration));
+  // verlet_component->streams->acceleration =
+  //     zcalloc(MAX_NO_ENTITY,
+  //     sizeof(*verlet_component->streams->acceleration));
 
   return verlet_component != NULL && component_intialized;
 }

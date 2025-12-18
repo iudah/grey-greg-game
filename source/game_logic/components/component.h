@@ -5,12 +5,16 @@
 
 #include "entity.h"
 
+#define GET_BIT(mask, id) ((mask)[(id) / 32] & (UINT32_C(1) << ((id) % 32)))
+
 typedef struct {
   entity *dense;
   uint32_t *sparse;
   uint32_t *mask;
   uint64_t *streams_sizes;
   uint32_t count;
+  uint32_t sparse_capacity;
+  uint32_t dense_capacity;
   uint8_t no_of_stream;
 } component_set;
 
@@ -33,15 +37,10 @@ bool initialize_component(struct generic_component *component,
 
 static inline bool has_component(entity e,
                                  struct generic_component *component) {
-  if (e.id >= MAX_NO_ENTITY)
+  if (e.id >= component->set.sparse_capacity)
     return false;
 
-  uint32_t j = component->set.sparse[e.id];
-
-  if (j >= component->set.count || component->set.dense[j].id != e.id)
-    return false;
-
-  return true;
+  return GET_BIT((component->set.mask), (e.id));
 }
 
 #endif

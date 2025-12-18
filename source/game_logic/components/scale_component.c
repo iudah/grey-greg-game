@@ -12,8 +12,5 @@ bool initialize_scale_component() {
       (uint64_t[]){sizeof((*scale_component->streams->scale))},
       sizeof(*scale_component->streams) / sizeof(void *));
 
-  scale_component->streams->scale =
-      zcalloc(MAX_NO_ENTITY, sizeof(*scale_component->streams->scale));
-
   return scale_component != NULL && component_intialized;
 }

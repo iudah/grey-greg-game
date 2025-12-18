@@ -60,7 +60,8 @@ void euler_method() {
   struct vec4_st *vel = velocity_component->streams->velocity;
   struct vec4_st *aabb = aabb_component->streams->extent;
 
-  assert(position_component->set.count <= MAX_NO_ENTITY);
+  assert(position_component->set.count <=
+         position_component->set.dense_capacity);
   memcpy(prev_pos, pos, position_component->set.count * sizeof(*prev_pos));
 
   for (uint32_t i = 0; i < velocity_component->set.count; ++i) {
@@ -194,7 +195,7 @@ void compute_swept_aabb_collision() {
   struct vec4_st *extents = aabb_component->streams->extent;
   struct vec4_st *last_positions = position_component->stream->position;
   struct vec4_st *curr_positions = position_component->stream->curr_position;
-  struct vec4_st *prev_positions = aabb_component->streams->prev_timestep_pos;
+  struct vec4_st *prev_positions = position_component->stream->prev_timestep_pos;
 
   if (!prev_positions)
     prev_positions = last_positions;
@@ -260,13 +261,9 @@ void compute_swept_aabb_collision() {
 
 void interpolate_positions(float interpolation_factor) {
 
-  void *tmp = aabb_component->streams->prev_timestep_pos;
-  if (!tmp)
-    tmp = zcalloc(MAX_NO_ENTITY, sizeof(struct vec4_st));
+  void *tmp = position_component->stream->prev_timestep_pos;
 
-  // ToDo: deep copy current position
-
-  aabb_component->streams->prev_timestep_pos =
+  position_component->stream->prev_timestep_pos =
       position_component->stream->curr_position;
   position_component->stream->curr_position = tmp;
 

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MAX_NO_ENTITY (250)
+#define INITIAL_CAPACITY (32)
 
 typedef struct {
   uint32_t id : 24;

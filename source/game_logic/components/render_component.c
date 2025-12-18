@@ -13,8 +13,8 @@ bool initialize_render_component() {
       (uint64_t[]){sizeof(*render_component->streams->color)},
       sizeof(*render_component->streams) / sizeof(void *));
 
-  render_component->streams->color =
-      zcalloc(MAX_NO_ENTITY, sizeof(*render_component->streams->color));
+  // render_component->streams->color =
+  //     zcalloc(MAX_NO_ENTITY, sizeof(*render_component->streams->color));
 
   return render_component != NULL && component_intialized;
 }

@@ -10,7 +10,7 @@ typedef struct {
 
 actor_manager *create_actor_manager() {
   actor_manager *manager = zcalloc(1, sizeof(actor_manager));
-  manager->actors = zcalloc(MAX_NO_ENTITY, sizeof(entity));
+  // manager->actors = zcalloc(MAX_NO_ENTITY, sizeof(entity));
   return manager;
 }
 

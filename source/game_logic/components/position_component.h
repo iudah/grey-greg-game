@@ -10,6 +10,8 @@ struct position_component {
     struct vec4_st *prev_position;
     // `curr_position` serves for interpolation between positions
     struct vec4_st *curr_position;
+    struct vec4_st *prev_timestep_pos;
+
   } *stream;
 };
 
