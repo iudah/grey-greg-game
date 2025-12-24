@@ -1,14 +1,14 @@
 #ifndef VELOCITY_COMPONENTS_H
 #define VELOCITY_COMPONENTS_H
 
-#include "component.h"
+#include "component_base.h"
 
-struct velocity_component {
+struct velocity_component
+{
   component_set set;
-  struct {
-    struct vec4_st {
-      float x, y, z, w;
-    } *velocity, *acceleration;
+  struct
+  {
+    struct vec4_st *velocity, *acceleration;
   } *streams;
 };
 

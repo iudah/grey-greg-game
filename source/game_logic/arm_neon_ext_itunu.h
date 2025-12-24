@@ -1,7 +1,11 @@
 #ifndef ARM_NEON_ITUNU
 #define ARM_NEON_ITUNU
 
+#ifdef __arm__
 #include <arm_neon.h>
+#else
+#include "NEON_2_SSE.h"
+#endif
 
 #if defined __arm__ && defined __ARM_FP && !defined __LITTLE_ENDIAN__
 #error Sorry but I am trying to finish this project and currently only support little endian arm because that is what I use.

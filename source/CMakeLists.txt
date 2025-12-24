@@ -31,7 +31,7 @@ if(NOT TARGET memalloc::memalloc)
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF 
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -58,7 +58,7 @@ if(NOT TARGET zot::zot)
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF 
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
@@ -99,21 +99,31 @@ target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
+include(CheckCCompilerFlag)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   if(MSVC)
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
   else()
-    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer -DZ_USE_ASAN=1)
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
   endif()
   if(ENABLE_SANITIZERS AND NOT MSVC)
-    target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
-    target_link_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
+    check_c_compiler_flag("-fsanitize=address" HAS_ASAN)
+    if(HAS_ASAN)
+      target_compile_options(${TARGET} PRIVATE -DZ_USE_ASAN=1)
+      target_compile_options(${TARGET} PRIVATE -fsanitize=address)
+      target_link_options(${TARGET} PRIVATE -fsanitize=address)
+    endif()
+    check_c_compiler_flag("-fsanitize=undefined" HAS_UBSAN)
+    if(HAS_UBSAN)
+      target_compile_options(${TARGET} PRIVATE -fsanitize=undefined)
+      target_link_options(${TARGET} PRIVATE -fsanitize=undefined)
+    endif()
   endif()
 endif()
 
 if(NOT MSVC)
-  include(CheckCCompilerFlag)
   if((CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64"))
     check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
     if(HAS_NEON_FLAG)

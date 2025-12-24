@@ -1,14 +1,14 @@
 #ifndef WAYPOINT_COMPONENT_H
 #define WAYPOINT_COMPONENT_H
 
-#include "component.h"
+#include "component_base.h"
 
-struct waypoint_component {
+struct waypoint_component
+{
   component_set set;
-  struct {
-    struct vec4_st {
-      float x, y, z, w;
-    } *waypoint;
+  struct
+  {
+    struct vec4_st *waypoint;
   } *streams;
 };
 
