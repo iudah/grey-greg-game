@@ -87,6 +87,8 @@ target_include_directories(${TARGET}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_application>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/components>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/entities>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/systems>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
   $<INSTALL_INTERFACE:include>
 )

@@ -3,10 +3,16 @@
 #include <inttypes.h>
 #include <math.h>
 #include <position_component.h>
+#include <mass_component.h>
+#include <physics_system.h>
+#include <gravity_system.h>
+#include <render_system.h>
+#include <systems_manager.h>
 #include <render_component.h>
 #include <stdint.h>
 #include <velocity_component.h>
 #include <waypoint_component.h>
+#include <force_component.h>
 #include <zot.h>
 
 typedef struct generic_component generic_component_t;
@@ -14,18 +20,15 @@ typedef struct generic_component generic_component_t;
 #define SPRITE_X 20
 #define SPRITE_Y 20
 
-entity character(float pos_x, float pos_y, float vel_x, float vel_y,
-                 uint32_t rgba) {
+entity sprite(float pos_x, float pos_y, uint32_t rgba)
+{
   entity e = create_entity();
 
   actor_add_component(e, (generic_component_t *)position_component);
-  actor_add_component(e, (generic_component_t *)velocity_component);
   actor_add_component(e, (generic_component_t *)aabb_component);
-  // actor_add_component(e, (generic_component_t *)waypoint_component);
   actor_add_component(e, (generic_component_t *)render_component);
 
   set_entity_position(e, pos_x, pos_y, 0);
-  set_entity_velocity(e, vel_x, vel_y, 0);
   set_entity_aabb_lim(e, SPRITE_X, SPRITE_Y, 0);
 
   set_entity_color(e, rgba);
@@ -33,38 +36,59 @@ entity character(float pos_x, float pos_y, float vel_x, float vel_y,
   return e;
 }
 
-entity person(float pos_x, float pos_y, float vel_x, float vel_y) {
-  return character(pos_x, pos_y, vel_x, vel_y, 0xb5651d);
+entity terrain(float pos_x, float pos_y, uint32_t rgba)
+{
+  return sprite(pos_x, pos_y, rgba);
 }
 
-entity rock(float pos_x, float pos_y) {
-  return character(pos_x, pos_y, 0, 0, 0x7f8386);
+entity person(float pos_x, float pos_y, float vel_x, float vel_y)
+{
+  entity e = sprite(pos_x, pos_y, 0xb5651d);
+  actor_add_component(e, (generic_component_t *)velocity_component);
+  actor_add_component(e, (generic_component_t *)force_component);
+  actor_add_component(e, (generic_component_t *)mass_component);
+  set_entity_velocity(e, vel_x, vel_y, 0);
+  set_entity_mass(e, 10);
+
+  return e;
 }
 
-entity grass(float pos_x, float pos_y) {
-  return character(pos_x, pos_y, 0, 0, 0x3F9B0B);
+entity rock(float pos_x, float pos_y)
+{
+  return terrain(pos_x, pos_y, 0x7f8386);
 }
 
-entity mud(float pos_x, float pos_y) {
-  return character(pos_x, pos_y, 0, 0, 0xb5651d);
+entity grass(float pos_x, float pos_y)
+{
+  return terrain(pos_x, pos_y, 0x3F9B0B);
 }
 
-struct {
+entity mud(float pos_x, float pos_y)
+{
+  return terrain(pos_x, pos_y, 0xb5651d);
+}
+
+struct
+{
   entity *sprite;
   uint32_t count;
   uint32_t cap;
 } world;
 
-bool world_append_sprite(entity e) {
-  if (!world.cap) {
+bool world_append_sprite(entity e)
+{
+  if (!world.cap)
+  {
     world.cap = 32;
     world.sprite = zmalloc(world.cap * sizeof(*world.sprite));
   }
 
-  if (world.cap == (world.count + 1)) {
+  if (world.cap == (world.count + 1))
+  {
     world.cap += 32;
     auto tmp = zrealloc(world.sprite, world.cap * sizeof(*world.sprite));
-    if (!tmp) {
+    if (!tmp)
+    {
       return false;
     }
     world.sprite = tmp;
@@ -73,9 +97,14 @@ bool world_append_sprite(entity e) {
   world.sprite[world.count++] = e;
   return true;
 }
-void init_world() {
+void init_world()
+{
+  register_system_update((system_update_fn_t)clear_forces);
+  register_system_update((system_update_fn_t)gravity_system_update);
+  register_system_update((system_update_fn_t)physics_system_update);
+  register_system_update((system_update_fn_t)render_system_update);
 
-#define EPSILON 0.0001
+#define EPSILON (GREY_AABB_GAP * 1e3f)
 #define SPRITE_W (SPRITE_X + EPSILON)
 #define SPRITE_H (SPRITE_Y + EPSILON)
 
@@ -83,19 +112,23 @@ void init_world() {
   float step_y = SPRITE_H * 2;
 
   // Border
-  for (float y = 0; (y - SPRITE_H) < SCREEN_Y; y += step_y) {
-    for (float x = 0; (x - SPRITE_W) < SCREEN_X; x += step_x) {
+  for (float y = 0; (y - SPRITE_H) < SCREEN_Y; y += step_y)
+  {
+    for (float x = 0; (x - SPRITE_W) < SCREEN_X; x += step_x)
+    {
       bool is_start = (x < SPRITE_W || y < SPRITE_H);
       bool is_end = (x + SPRITE_W > SCREEN_X || y + SPRITE_H > SCREEN_Y);
 
-      if (is_start || is_end) {
+      if (is_start || is_end)
+      {
         world_append_sprite(rock(x, y));
       }
     }
   }
 
   // Platform
-  struct {
+  struct
+  {
     entity (*base_type)(float, float);
     float x, y;
     uint32_t length;
@@ -123,16 +156,19 @@ void init_world() {
   // Platforms & Enemies
   size_t num_platforms = sizeof(levels) / sizeof(levels[0]);
 
-  for (uint32_t i = 0; i < num_platforms; ++i) {
+  for (uint32_t i = 0; i < num_platforms; ++i)
+  {
 
-    for (uint32_t j = 0; j < levels[i].length; ++j) {
+    for (uint32_t j = 0; j < levels[i].length; ++j)
+    {
 
       float current_x = levels[i].x + j * step_x;
       float current_y = levels[i].y;
 
       entity (*current_mat)(float, float) = levels[i].base_type;
 
-      if (levels[i].is_mixed) {
+      if (levels[i].is_mixed)
+      {
         if (j % 3 == 0)
           current_mat = rock;
         else if (j % 2 == 0)
@@ -144,8 +180,10 @@ void init_world() {
       world_append_sprite(current_mat(current_x, current_y));
 
       // Enemy spawning
-      if (levels[i].enemies > 0) {
-        if (j >= levels[i].length - levels[i].enemies) {
+      if (levels[i].enemies > 0)
+      {
+        if (j >= levels[i].length - levels[i].enemies)
+        {
           world_append_sprite(person(current_x, current_y - 40, 10, 0));
         }
       }

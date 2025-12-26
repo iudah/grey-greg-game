@@ -3,6 +3,5 @@
 
 typedef void (*system_update_fn_t)(void);
 
-bool register_system(system_update_fn_t system);
-
+bool register_system_update(system_update_fn_t system);
 #endif

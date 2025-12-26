@@ -2,7 +2,8 @@
 
 int game_main();
 
-int main() {
+int main()
+{
   init_world();
   game_main();
 }

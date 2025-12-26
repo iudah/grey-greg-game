@@ -2,10 +2,14 @@
 #define G_ENTITY_H
 
 #include <stdint.h>
+#include "game_logic.h"
+
+#define GREY_AABB_GAP (GREY_ZERO * 1e3f)
 
 #define INITIAL_CAPACITY (32)
 
-typedef struct {
+typedef struct
+{
   uint32_t id : 24;
   uint32_t generation : 8;
 } entity;

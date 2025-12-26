@@ -7,7 +7,11 @@
 
 #define MAX_EVENT 63555
 
-typedef enum { NO_EVENT, COLLISION_EVENT } event_type;
+typedef enum
+{
+    NO_EVENT,
+    COLLISION_EVENT
+} event_type;
 
 typedef struct event_system event_system;
 typedef struct event_queue event_queue;
