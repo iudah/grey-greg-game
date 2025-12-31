@@ -13,15 +13,24 @@ typedef enum
     COLLISION_EVENT
 } event_type;
 
+typedef struct
+{
+    void *info;
+    event_type type;
+} event;
+
 typedef struct event_system event_system;
 typedef struct event_queue event_queue;
+typedef bool (*event_handler)(event *);
 
 extern event_queue *event__queue;
 extern event_system *event__system;
 
 void event_default_broadcast();
+event_system *get_default_event_default();
 void event_handler_broadcast(event_system *system, event_queue *queue);
 bool event_trigger(event_queue *q, void *info, int type);
 void event_enqueue_collision(entity entity_i, entity entity_j);
+void event_handler_register(event_system *system, event_handler handle);
 
 #endif

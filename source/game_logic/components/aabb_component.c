@@ -4,7 +4,8 @@
 
 struct aabb_component *aabb_component;
 
-bool initialize_aabb_component() {
+bool initialize_aabb_component()
+{
   aabb_component = zcalloc(1, sizeof(struct aabb_component));
   auto component = (struct generic_component *)aabb_component;
 
@@ -21,3 +22,5 @@ bool initialize_aabb_component() {
 
   return aabb_component != NULL && component_intialized;
 }
+
+void make_walk_through() {}

@@ -35,9 +35,10 @@ bool register_system_update(system_update_fn_t system)
 
 void systems_update()
 {
-  event_default_broadcast();
   for (uint32_t i = 0; i < manager.no_system; ++i)
   {
+    event_default_broadcast();
     manager.system[i]();
   }
+  event_default_broadcast();
 }

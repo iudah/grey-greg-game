@@ -1,10 +1,15 @@
 #ifndef GAME_LOGIC_H
 #define GAME_LOGIC_H
 
-#define GREY_ZERO (1e-6f)
+#include <stdbool.h>
 
+#define GREY_ZERO (1e-5f)
+
+extern bool is_2d;
+
+void use_2d();
 void interpolate_positions(float interpolation_factor);
 void systems_update();
-void compute_swept_aabb_collision();
+void compute_collisions();
 
 #endif

@@ -37,36 +37,14 @@ struct vec4_st *get_position(entity e)
   return &position_component->stream->position[j];
 }
 
-void interpolate_positions(float interpolation_factor)
+struct vec4_st *get_previous_position(entity e)
 {
-  // ToDo: Move interp_* to render
-#if 0
-  void *tmp = position_component->stream->prev_interp_position;
+  if (!has_component(e, (struct generic_component *)position_component))
+    return NULL;
 
-  position_component->stream->prev_interp_position =
-      position_component->stream->curr_interp_position;
-  position_component->stream->curr_interp_position = tmp;
+  uint32_t j = position_component->set.sparse[e.id];
 
-  struct vec4_st *physix_pos = position_component->stream->position;
-  struct vec4_st *physix_prev_pos = position_component->stream->prev_position;
-  struct vec4_st *curr_interp_pos = position_component->stream->curr_interp_position;
-
-  auto ifac = vdupq_n_f32(interpolation_factor);
-
-  for (uint32_t i = 0; i < position_component->set.count; ++i)
-  {
-
-    auto p = vld1q_f32((void *)&physix_pos[i]);
-    auto pprev = vld1q_f32((void *)&physix_prev_pos[i]);
-    auto interp = vmlaq_f32(p, vsubq_f32(p, pprev), ifac);
-
-    vst1q_f32((void *)&curr_interp_pos[i], interp);
-
-    entity entity_i = position_component->set.dense[i];
-    printf("Entity %i at (%g, %g, %g)\n", entity_i.id, curr_interp_pos[i].x,
-           curr_interp_pos[i].y, curr_interp_pos[i].z);
-  }
-#endif
+  return &position_component->stream->prev_position[j];
 }
 
 bool set_position(entity e, float *position)

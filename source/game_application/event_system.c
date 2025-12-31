@@ -1,6 +1,7 @@
 #include "event_system.h"
 
 #include <stdlib.h>
+#include <inttypes.h>
 #include <zot.h> //a custom memory manager
 
 #ifdef _WIN32
@@ -23,32 +24,21 @@
 
 #define MAX_EVENT_HANDLER 25
 
-typedef struct {
-  void *info;
-  event_type type;
-} event;
-
-typedef bool (*event_handler)(event *);
-
-struct event_system {
+struct event_system
+{
   event_handler *event_handler; // list of handlers
   int no_event_handler;         // number of handlers
   int avail_no_event_handler;   // number of available handler
 };
 
 // cyclic queue
-struct event_queue {
+struct event_queue
+{
   event **queue;
-  int head;
-  int tail;
-  int no_event;
+  size_t head;
+  size_t tail;
+  size_t capacity;
 };
-
-typedef struct {
-  entity a, b;
-  // positions
-  // collision point
-} collision_data;
 
 bool event_enqueue(event_queue *q, event *e);
 bool event_destroy(event *e);
@@ -56,7 +46,8 @@ bool event_destroy(event *e);
 void *create_event_system() { return zcalloc(1, sizeof(event_system)); }
 
 void initialize_event_system(event_system *system,
-                             uint32_t initial_no_of_system) {
+                             uint32_t initial_no_of_system)
+{
   if (!initial_no_of_system)
     initial_no_of_system = 1;
   system->event_handler =
@@ -65,10 +56,12 @@ void initialize_event_system(event_system *system,
   system->avail_no_event_handler = initial_no_of_system;
 }
 
-void initialize_event_queue(event_queue *queue, uint32_t initial_no_of_event) {
+void initialize_event_queue(event_queue *queue, uint32_t initial_no_of_event)
+{
   if (!initial_no_of_event)
     initial_no_of_event = 100;
-  queue->no_event = initial_no_of_event;
+  queue->capacity = initial_no_of_event;
+  queue->head = queue->tail = 0;
   queue->queue = zcalloc(initial_no_of_event, sizeof(*queue->queue));
 }
 
@@ -78,45 +71,69 @@ event_queue *event__queue = &_queue_;
 event_system _sys_;
 event_system *event__system = &_sys_;
 
-void __attribute__((constructor)) init() {
+void __attribute__((constructor)) init()
+{
 
   initialize_event_queue(event__queue, MAX_EVENT);
   initialize_event_system(event__system, MAX_EVENT);
 }
 
-void event_default_broadcast() {
+void event_default_broadcast()
+{
   event_handler_broadcast(event__system, event__queue);
 }
 
+event_system *get_default_event_default()
+{
+  return event__system;
+}
+
+static inline bool is_empty(event_queue *q)
+{
+  return q->head == q->tail;
+}
+
+static inline bool is_full(event_queue *q)
+{
+  return (q->tail + 1) % q->capacity == q->head;
+}
 // broadcast may run on a seperate thread
-void event_handler_broadcast(event_system *system, event_queue *queue) {
+void event_handler_broadcast(event_system *system, event_queue *queue)
+{
 
   LOG("Broadcasting events.");
 
-  for (; queue->head != queue->tail; ++queue->head) {
+  uint32_t u = 0;
+
+  for (; queue->head != queue->tail; queue->head = (queue->head + 1) % queue->capacity)
+  {
 
     event *event = queue->queue[queue->head];
 
     // let zot handle cleaning automatically
-     queue->queue[queue->head]=0;
+    queue->queue[queue->head] = 0;
 
-    for (int i = 0; i < system->no_event_handler; ++i) {
-      if (event->type) {
+    for (int i = 0; i < system->no_event_handler; ++i)
+    {
+      if (event->type)
+      {
+        LOG("Events: %" PRIu32 ", System: %" PRIu32 ".", ++u, i + 1);
+
         system->event_handler[i](event);
       }
     }
-
-    if (queue->head == queue->no_event)
-      queue->head = 0;
   }
 }
 
-void event_handler_register(event_system *system, event_handler handle) {
-  if (!handle) {
+void event_handler_register(event_system *system, event_handler handle)
+{
+  if (!handle)
+  {
     LOG("Event handler is null.");
     return;
   }
-  if (system->no_event_handler >= MAX_EVENT_HANDLER) {
+  if (system->no_event_handler >= MAX_EVENT_HANDLER)
+  {
     LOG_ERROR("Maximum number of event handler reached for this broadcaster.");
     return;
   }
@@ -126,7 +143,8 @@ void event_handler_register(event_system *system, event_handler handle) {
 }
 
 // triggers may occur on multiple threads
-bool event_trigger(event_queue *q, void *info, int type) {
+bool event_trigger(event_queue *q, void *info, int type)
+{
   event *e = zmalloc(sizeof((*e)));
 
   e->info = info;
@@ -144,24 +162,14 @@ bool event_trigger(event_queue *q, void *info, int type) {
 //   return event_enqueue(q, e);
 // }
 
-bool event_enqueue(event_queue *q, event *e) {
-  if (q->tail == q->no_event)
-    q->tail = 0;
+bool event_enqueue(event_queue *q, event *e)
+{
 
-  if (q->tail == q->head)
+  if (is_full(q))
     return false;
 
   q->queue[q->tail] = e;
-  ++q->tail;
+  q->tail = (q->tail + 1) % q->capacity;
 
   return true;
-}
-
-void event_enqueue_collision(entity entity_i, entity entity_j) {
-  collision_data *collision = zmalloc(sizeof(*collision));
-
-  collision->a = entity_i;
-  collision->b = entity_j;
-
-  event_trigger(event__queue, collision, COLLISION_EVENT);
 }

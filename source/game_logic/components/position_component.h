@@ -22,6 +22,7 @@ extern struct position_component *position_component;
 bool initialize_position_component();
 bool set_position(entity e, float *position);
 struct vec4_st *get_position(entity e);
+struct vec4_st *get_previous_position(entity e);
 
 static inline bool set_entity_position(entity e, float x, float y, float z)
 {

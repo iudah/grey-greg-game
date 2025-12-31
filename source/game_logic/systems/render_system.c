@@ -37,8 +37,7 @@ void render()
 
   struct vec4_st *extent = aabb_component->streams->extent;
   entity *e = aabb_component->set.dense;
-  // todo: use render position
-  struct vec4_st *position = position_component->stream->position;
+  struct vec4_st *position = render_component->streams->interpolated_position;
 
   for (uint32_t i = 0; i < aabb_component->set.count; i++)
   {
@@ -73,7 +72,7 @@ void render()
     }
   }
 
-  if (count >= 100)
+  if (count >= 400)
     exit(0);
   LOG("                            `tmp/img_%08" PRIu64 ".ppm`", count);
 

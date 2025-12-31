@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "game_logic.h"
 
-#define GREY_AABB_GAP (GREY_ZERO * 1e3f)
+#define GREY_AABB_GAP (GREY_ZERO * 1e2f)
 
 #define INITIAL_CAPACITY (32)
 

@@ -99,12 +99,16 @@ bool world_append_sprite(entity e)
 }
 void init_world()
 {
+  // use_2d();
+
   register_system_update((system_update_fn_t)clear_forces);
   register_system_update((system_update_fn_t)gravity_system_update);
   register_system_update((system_update_fn_t)physics_system_update);
   register_system_update((system_update_fn_t)render_system_update);
 
-#define EPSILON (GREY_AABB_GAP * 1e3f)
+  event_handler_register(get_default_event_default(), walk_through_resolution);
+
+#define EPSILON (GREY_AABB_GAP)
 #define SPRITE_W (SPRITE_X + EPSILON)
 #define SPRITE_H (SPRITE_Y + EPSILON)
 
@@ -184,7 +188,7 @@ void init_world()
       {
         if (j >= levels[i].length - levels[i].enemies)
         {
-          world_append_sprite(person(current_x, current_y - 40, 10, 0));
+          world_append_sprite(person(current_x, current_y - 40 - EPSILON * 4, 10, 0));
         }
       }
     }
@@ -192,7 +196,7 @@ void init_world()
 
   // Player
   float p_x = levels[0].x + EPSILON * 4;
-  float p_y = levels[0].y - 40;
+  float p_y = levels[0].y - 40 - EPSILON * 4;
 
   // A slave's dream is not of freedom but of a slave to call his own
 

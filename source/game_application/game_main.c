@@ -43,8 +43,15 @@ static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
 static void render_frame(float interpolation_factor);
 
+bool is_2d = false;
+
 bool quit = false;
 ztimespec iter_start, iter_end;
+
+void use_2d()
+{
+  is_2d = true;
+}
 
 int game_main()
 {
@@ -106,8 +113,6 @@ static void render_frame(float interpolation_factor)
   // render
   interpolate_positions(interpolation_factor);
   render();
-  // perform swept collision test
-  compute_swept_aabb_collision();
 }
 
 #ifdef _WIN32

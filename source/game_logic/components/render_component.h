@@ -7,12 +7,15 @@
 #define SCREEN_X 960
 #define SCREEN_Y 720
 
-struct render_component {
+struct render_component
+{
   component_set set;
-  struct {
+  struct
+  {
     // struct vec4_st *scale;
     // struct vec4_st *rotation;
     struct vec4_st *color;
+    struct vec4_st *interpolated_position;
   } *streams;
 };
 
