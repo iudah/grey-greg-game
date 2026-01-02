@@ -85,13 +85,13 @@ void euler_method()
     auto t = vdupq_n_f32(TIMESTEP);
     auto v = vld1q_f32((void *)&vel[i]);
 
-    if (has_component(entity, mass_component) &&
-        has_component(entity, force_component))
+    if (has_component(entity, (struct generic_component *)mass_component) &&
+        has_component(entity, (struct generic_component *)force_component))
     {
       auto mass = get_mass(entity);
       if (mass < GREY_ZERO)
         mass = 1;
-      auto zero_f = (struct vec4_st){{0, 0, 0, 0}};
+      auto zero_f = (struct vec4_st){0, 0, 0, 0};
       auto force = get_force(entity);
       if (!force)
         force = &zero_f;
@@ -293,87 +293,6 @@ static inline float magnitude(float32x4_t v)
   return sqrtf(vaddvq_f32(v2));
 }
 
-bool ray_box_collision1(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
-                        struct vec4_st *pos_a, struct vec4_st *pos_b,
-                        struct vec4_st *extents_a, struct vec4_st *extents_b,
-                        float *factor, int *coll_axis)
-{
-  float32x4_t extent_sum =
-      vaddq_f32(vld1q_f32((float *)extents_a),
-                vld1q_f32((float *)extents_b));
-
-  float32x4_t pa0 = vld1q_f32((float *)prev_pos_a);
-  float32x4_t pb0 = vld1q_f32((float *)prev_pos_b);
-  float32x4_t pa1 = vld1q_f32((float *)pos_a);
-  float32x4_t pb1 = vld1q_f32((float *)pos_b);
-
-  // Zero w
-  pa0 = vsetq_lane_f32(0, pa0, 3);
-  pb0 = vsetq_lane_f32(0, pb0, 3);
-  extent_sum = vsetq_lane_f32(0, extent_sum, 3);
-
-  float32x4_t left = vsubq_f32(pa0, extent_sum);
-  float32x4_t right = vaddq_f32(pa0, extent_sum);
-
-  // ray dir
-  float32x4_t dir =
-      vsubq_f32(vsubq_f32(pb1, pb0), vsubq_f32(pa1, pa0));
-
-  float dir_arr[4];
-  vst1q_f32(dir_arr, dir);
-
-  for (int i = 0; i < 3; ++i)
-  {
-    if (fabsf(dir_arr[i]) <= GREY_ZERO)
-    {
-      if (pb0[i] < vgetq_lane_f32(left, i) || pb0[i] > vgetq_lane_f32(right, i))
-        return false;
-    }
-
-    dir_arr[i] = 1.f / dir_arr[i];
-  }
-  dir_arr[3] = 0;
-
-  float32x4_t inv_dir = vld1q_f32(dir_arr);
-
-  float32x4_t t0 =
-      vmulq_f32(vsubq_f32(left, pb0), inv_dir);
-  float32x4_t t1 =
-      vmulq_f32(vsubq_f32(right, pb0), inv_dir);
-
-  float32x4_t tmin = vminq_f32(t0, t1);
-  float32x4_t tmax = vmaxq_f32(t0, t1);
-
-  float tmin_s[4], tmax_s[4];
-  vst1q_f32(tmin_s, tmin);
-  vst1q_f32(tmax_s, tmax);
-
-  float t_enter = -INFINITY;
-  int axis = 0;
-  for (int i = 0; i < 3; i++)
-  {
-    if (tmin_s[i] > t_enter)
-    {
-      t_enter = tmin_s[i];
-      axis = i;
-    }
-  }
-
-  fmaxf(tmin_s[0], fmaxf(tmin_s[1], tmin_s[2]));
-  float t_exit = fminf(tmax_s[0], fminf(tmax_s[1], tmax_s[2]));
-
-  if (t_exit < 0.0f || t_enter > t_exit || t_enter > 1.0f)
-    return false;
-
-  if (factor)
-    *factor = t_enter;
-
-  if (coll_axis)
-    *coll_axis = axis;
-
-  return true;
-}
-
 bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
                        struct vec4_st *pos_a, struct vec4_st *pos_b,
                        struct vec4_st *extents_a, struct vec4_st *extents_b,
@@ -471,7 +390,6 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
   return true;
 }
 
-bool resolve_walkthrough(entity a, entity b);
 void compute_collisions()
 {
   float *radii = aabb_component->streams->radius;
@@ -525,106 +443,11 @@ void compute_collisions()
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b))
       {
-        // resolve_walkthrough(entity_a, entity_b);
         resolve_collision(entity_a, entity_b);
       }
     }
   }
 }
-
-#if 0
-static inline bool may_collide(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b, struct vec4_st *pos_b, float radii_a, float radii_b)
-{
-  if (!radii_collide(prev_pos_a, prev_pos_b, pos_b, radii_a, radii_b))
-    return false;
-}
-
-void compute_minkowski_collisions()
-{
-  float *radii = aabb_component->streams->radius;
-  struct vec4_st *extents = aabb_component->streams->extent;
-  struct vec4_st *physix_positions = position_component->stream->position;
-  struct vec4_st *physix_previous_positions = position_component->stream->prev_position;
-
-  if (!physix_previous_positions)
-    physix_previous_positions = physix_positions;
-
-  for (uint32_t aabb_i = 0; aabb_i < aabb_component->set.count; ++aabb_i)
-  {
-    entity entity_a = aabb_component->set.dense[aabb_i];
-    uint32_t pos_i;
-
-    if (!component_get_dense_id((struct generic_component *)position_component, entity_a, &pos_i))
-      continue;
-
-#if 0
-    float32x4_t min_a;
-    float32x4_t max_a;
-    compute_swept_aabb_box(&physix_positions[pos_i],
-                           physix_previous_positions ? &physix_previous_positions[pos_i] : NULL,
-                           &extents[aabb_i], &min_a, &max_a);
-#endif
-
-    for (uint32_t aabb_j = aabb_i + 1; aabb_j < aabb_component->set.count;
-         ++aabb_j)
-    {
-      entity entity_b = aabb_component->set.dense[aabb_j];
-      uint32_t pos_j;
-
-      if (!component_get_dense_id((struct generic_component *)position_component, entity_b, &pos_j))
-        continue;
-
-      // auto relative_vel = compute_relative_velocity(physix_previous_positions[pos_i], physix_positions[pos_j], physix_previous_positions[pos_j], physix_positions[pos_j], TIMESTEP);
-
-      if (!may_collide(physix_previous_positions + pos_i, physix_previous_positions + pos_j, physix_positions + pos_j, radii[pos_i], radii[pos_j]))
-        continue;
-
-#if 0
-      float distance_between =
-          distance(&physix_positions[pos_i], &physix_positions[pos_j], false, NULL);
-      if (distance_between - (radii[aabb_i] + radii[aabb_j]) > GREY_ZERO)
-      {
-        continue;
-      }
-
-      float32x4_t min_b;
-      float32x4_t max_b;
-
-      compute_swept_aabb_box(&physix_positions[pos_j],
-                             physix_previous_positions ? &physix_previous_positions[pos_j] : NULL,
-                             &extents[aabb_j], &min_b, &max_b);
-
-      if (check_aabb_overlap(min_a, max_a, min_b, max_b))
-#endif
-      {
-        // ToDo:  Use Minkowski sum
-        resolve_collision(entity_a, entity_b);
-      }
-    }
-  }
-}
-#endif
-
-#if 0
-bool set_verlet_velocity(entity e, float *vel)
-{
-  set_euler_velocity(e, vel);
-
-  uint32_t j = position_component->set.sparse[e.id];
-
-  struct vec4_st *pos = &position_component->stream->position[j];
-  struct vec4_st *prev_pos = &position_component->stream->prev_position[j];
-
-  // Todo: Should I use the elapsed time?
-  // But no time is elapsed at the start of set up
-  // What if position changes mid-game, like teleportation?
-  prev_pos->x = pos->x - vel[0] * TIMESTEP;
-  prev_pos->y = pos->y - vel[1] * TIMESTEP;
-  prev_pos->z = pos->z - vel[2] * TIMESTEP;
-
-  return true;
-}
-#endif
 
 void update_position(entity e, float *pos, float *prev_pos, float fac, int coll_axis)
 {
@@ -647,7 +470,7 @@ void update_position(entity e, float *pos, float *prev_pos, float fac, int coll_
     if (coll_axis == 2)
       vel->z = 0;
 
-    current_p = vmlaq_n_f32(current_p, vld1q_f32(vel), TIMESTEP * (1 - fac));
+    current_p = vmlaq_n_f32(current_p, vld1q_f32((float *)vel), TIMESTEP * (1 - fac));
     vst1q_f32(pos, current_p);
   }
 }
@@ -692,8 +515,6 @@ bool resolve_walkthrough(entity a, entity b)
   // Adjust positions based on collision
   float safe_fac = fac > GREY_ZERO ? fac - GREY_ZERO : 0.0f;
 
-  // Get velocities
-
   update_position(a, (float *)&physix_positions[pos_a], (float *)&physix_previous_positions[pos_a], safe_fac, coll_axis);
   update_position(b, (float *)&physix_positions[pos_b], (float *)&physix_previous_positions[pos_b], safe_fac, coll_axis);
 
@@ -701,7 +522,6 @@ bool resolve_walkthrough(entity a, entity b)
 }
 bool walk_through_resolution(event *e)
 {
-  // return false;
   printf("______________%s\n", __FUNCTION__);
 
   if (e->type != COLLISION_EVENT)

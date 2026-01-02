@@ -99,7 +99,7 @@ bool world_append_sprite(entity e)
 }
 void init_world()
 {
-  // use_2d();
+  use_2d();
 
   register_system_update((system_update_fn_t)clear_forces);
   register_system_update((system_update_fn_t)gravity_system_update);
