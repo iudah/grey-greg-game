@@ -75,6 +75,43 @@ set_target_properties(zot_imported PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include"
 )
 
+find_package(raylib QUIET)
+add_library(raylib_imported STATIC IMPORTED)
+if(NOT TARGET raylib::raylib)
+  message(STATUS "raylib not found, adding as ExternalProject")
+  if("${PLATFORM}" STREQUAL "Android" OR ANDROID)
+    set(PLATFORM Android)
+    set(RAYLIB_CMAKE_ARG -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DPLATFORM=Android -DANDROID_ABI=${ANDROID_ABI} -DANDROID_PLATFORM=${ANDROID_PLATFORM} -DBUILD_EXAMPLES=OFF)
+  else()
+    if(NOT "${PLATFORM}" STREQUAL "Desktop" AND NOT "${PLATFORM}" STREQUAL "Web")
+      set(PLATFORM Desktop)
+    endif()
+    set(RAYLIB_CMAKE_ARG -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DPLATFORM=${PLATFORM})
+  endif()
+  ExternalProject_Add(
+    raylib
+    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+    GIT_SHALLOW TRUE
+    GIT_CLONE_DEPTH 1
+    INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> ${RAYLIB_CMAKE_ARG} -DBUILD_EXAMPLES=OFF -DBUILD_SHARED_LIBS=OFF -DRAYLIB_LIB_NAME=raylib
+    BUILD_ALWAYS OFF
+    STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+    UPDATE_DISCONNECTED TRUE
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  )
+
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include")
+
+  add_dependencies(raylib_imported raylib)
+  add_library(raylib::raylib ALIAS raylib_imported)
+endif()
+set_target_properties(raylib_imported PROPERTIES
+  IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include"
+)
+
+
 include(sources.cmake)
 include(headers.cmake)
 
@@ -99,6 +136,12 @@ target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PUBLIC pthread)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
+if("${PLATFORM}" STREQUAL "Android")
+  target_link_libraries(${TARGET} PUBLIC native_app_glue log android EGL GLESv2 OpenSLES atomic c dl)
+else()
+  target_link_libraries(${TARGET} PUBLIC gdi32 winmm)
+endif()
+target_link_libraries(${TARGET} PUBLIC raylib::raylib)
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
 include(CheckCCompilerFlag)
