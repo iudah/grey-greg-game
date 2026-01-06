@@ -1,6 +1,7 @@
 set(HEADER_FILES
     game_application/event_system.h
     game_application/game_main.h
+    game_application/raylib_glue.h
     game_logic/arm_neon_ext_itunu.h
     game_logic/components/aabb_component.h
     game_logic/components/component.h
@@ -19,6 +20,7 @@ set(HEADER_FILES
     game_logic/entities/entity.h
     game_logic/game_logic.h
     game_logic/simd.h
+    game_logic/systems/gravity_system.h
     game_logic/systems/physics_system.h
     game_logic/systems/render_system.h
     game_logic/systems/systems_manager.h

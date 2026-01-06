@@ -13,6 +13,7 @@
 #include <velocity_component.h>
 #include <waypoint_component.h>
 #include <force_component.h>
+#include <game_main.h>
 #include <zot.h>
 
 typedef struct generic_component generic_component_t;
@@ -99,7 +100,7 @@ bool world_append_sprite(entity e)
 }
 void init_world()
 {
-  use_2d();
+  set_game_screen_config(SCREEN_X, SCREEN_Y, "Grey Greg", 60);
 
   register_system_update((system_update_fn_t)clear_forces);
   register_system_update((system_update_fn_t)gravity_system_update);

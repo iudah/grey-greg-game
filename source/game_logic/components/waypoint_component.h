@@ -3,16 +3,14 @@
 
 #include "component_base.h"
 
-struct waypoint_component
-{
+struct waypoint_component {
   component_set set;
-  struct
-  {
-    struct vec4_st *waypoint;
-  } *streams;
+  struct {
+    struct vec4_st* waypoint;
+  }* streams;
 };
 
-extern struct waypoint_component *waypoint_component;
+extern struct waypoint_component* waypoint_component;
 
 bool initialize_waypoint_component();
 

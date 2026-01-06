@@ -5,22 +5,19 @@
 #define socklen_t int
 #endif
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
 #include <zot.h>
-#include <string.h>
 
-bool get_socket(int *sock, char *address, int port)
-{
+bool get_socket(int* sock, char* address, int port) {
   *sock = socket(PF_INET, SOCK_DGRAM, 0);
-  if (*sock < 0)
-  {
+  if (*sock < 0) {
     LOG_ERROR("Could not open UDP socket: %s", strerror(errno));
     return false;
   }
 
   char yes = 1;
-  if (setsockopt(*sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
-  {
+  if (setsockopt(*sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
     LOG_ERROR("Can not reuse UDP address: %s", strerror(errno));
   }
 
@@ -28,8 +25,7 @@ bool get_socket(int *sock, char *address, int port)
                              .sin_port = htons(port),
                              .sin_addr.s_addr = inet_addr(address)};
 
-  if (bind(*sock, (struct sockaddr *)&name, sizeof(name)) < 0)
-  {
+  if (bind(*sock, (struct sockaddr*)&name, sizeof(name)) < 0) {
     LOG_ERROR("Could not open UDP socket: %s", strerror(errno));
     return false;
   }
@@ -39,11 +35,9 @@ bool get_socket(int *sock, char *address, int port)
 
 #define ADDR "127.0.0.1"
 #define PORT 8098
-void init_server()
-{
+void init_server() {
   int socket;
-  if (!get_socket(&socket, ADDR, PORT))
-  {
+  if (!get_socket(&socket, ADDR, PORT)) {
     return;
   }
 
@@ -52,7 +46,7 @@ void init_server()
   uint32_t buff_len = 1024;
   char buffer[buff_len];
   int recvlen = recvfrom(socket, buffer, buff_len, MSG_WAITALL,
-                         (struct sockaddr *)&client_addr, &addr_len);
+                         (struct sockaddr*)&client_addr, &addr_len);
   buffer[recvlen] = '\0';
 
   int flag;
@@ -62,14 +56,12 @@ void init_server()
   flag = MSG_CONFIRM;
 #endif
   sendto(socket, buffer, strlen(buffer), flag,
-         (const struct sockaddr *)&client_addr, addr_len);
+         (const struct sockaddr*)&client_addr, addr_len);
 }
 
-void init_client()
-{
+void init_client() {
   int socket;
-  if (!get_socket(&socket, ADDR, PORT))
-  {
+  if (!get_socket(&socket, ADDR, PORT)) {
     return;
   }
 
@@ -86,9 +78,9 @@ void init_client()
 #endif
 
   sendto(socket, buffer, strlen(buffer), flag,
-         (const struct sockaddr *)&server_addr, addr_len);
+         (const struct sockaddr*)&server_addr, addr_len);
   int recvlen = recvfrom(socket, buffer, buff_len, MSG_WAITALL,
-                         (struct sockaddr *)&server_addr, &addr_len);
+                         (struct sockaddr*)&server_addr, &addr_len);
   buffer[recvlen] = '\0';
 
   close(socket);

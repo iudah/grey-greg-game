@@ -14,8 +14,7 @@
 #define __ai static __inline__ __attribute__((__always_inline__, __nodebug__))
 
 __ai __attribute__((target("neon"))) float32x4_t
-vdivq_f32(float32x4_t dividend, float32x4_t divisor)
-{
+vdivq_f32(float32x4_t dividend, float32x4_t divisor) {
   /*determine an initial estimate of reciprocal of divisor.*/
   auto initial_reciprocal = vrecpeq_f32(divisor);
   auto correction_factor = vrecpsq_f32(divisor, initial_reciprocal);
@@ -26,34 +25,30 @@ vdivq_f32(float32x4_t dividend, float32x4_t divisor)
   return vmulq_f32(dividend, initial_reciprocal);
 }
 
-__ai __attribute__((target("neon"))) float vaddvq_f32(float32x4_t a)
-{
+__ai __attribute__((target("neon"))) float vaddvq_f32(float32x4_t a) {
   auto sum = vadd_f32(vget_high_f32(a), vget_low_f32(a));
   sum = vpadd_f32(sum, sum);
 
   return vget_lane_f32(sum, 0);
 }
 
-__ai __attribute__((target("neon"))) float vminvq_f32(float32x4_t a)
-{
+__ai __attribute__((target("neon"))) float vminvq_f32(float32x4_t a) {
   auto min = vmin_f32(vget_high_f32(a), vget_low_f32(a));
   min = vpmin_f32(min, min);
   return vget_lane_f32(min, 0);
 }
 
-__ai __attribute__((target("neon"))) float vmaxvq_f32(float32x4_t a)
-{
+__ai __attribute__((target("neon"))) float vmaxvq_f32(float32x4_t a) {
   auto max = vmax_f32(vget_high_f32(a), vget_low_f32(a));
   max = vpmax_f32(max, max);
   return vget_lane_f32(max, 0);
 }
 
-__ai __attribute__((target("neon"))) float32x4_t SIMD_round(float32x4_t a)
-{
+__ai __attribute__((target("neon"))) float32x4_t SIMD_round(float32x4_t a) {
   // https://stackoverflow.com/a/69770515
   auto a_as_int = vcvtq_n_s32_f32(a, 1);
   auto arithmetic_shift_right =
-      vsraq_n_s32(a_as_int, a_as_int, 31); // account for negative rounding
+      vsraq_n_s32(a_as_int, a_as_int, 31);  // account for negative rounding
   auto floor_round = vrshrq_n_s32(arithmetic_shift_right, 1);
   return vcvtq_f32_s32(floor_round);
 }
@@ -63,8 +58,7 @@ __ai __attribute__((target("neon"))) float32x4_t SIMD_round(float32x4_t a)
 #define LN2 \
   0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875f
 
-__ai __attribute__((target("neon"))) float32x4_t SIMD_exp(float32x4_t a)
-{
+__ai __attribute__((target("neon"))) float32x4_t SIMD_exp(float32x4_t a) {
   auto a_over_ln2 = vmulq_n_f32(a, LN2_MUL_INV);
 
   auto n = SIMD_round(a_over_ln2);
@@ -108,9 +102,7 @@ __ai __attribute__((target("neon"))) float32x4_t SIMD_exp(float32x4_t a)
   return vmulq_f32(pow2n, exp_r_poly);
 }
 
-__ai __attribute__((target("neon"))) float32x4_t SIMD_log(float32x4_t a)
-{
-
+__ai __attribute__((target("neon"))) float32x4_t SIMD_log(float32x4_t a) {
   // Reinterpret input to extract bits
   uint32x4_t x_bits = vreinterpretq_u32_f32(a);
 
@@ -145,7 +137,7 @@ __ai __attribute__((target("neon"))) float32x4_t SIMD_log(float32x4_t a)
   poly = vmlaq_f32(R0, w, poly);
 
   float32x4_t R = vmlaq_f32(z, vmulq_f32(z, w), poly);
-  float32x4_t log_m = vaddq_f32(R, R); // 2 * R
+  float32x4_t log_m = vaddq_f32(R, R);  // 2 * R
 
   // Combine with exponent contribution
   const float32x4_t ln2 = vdupq_n_f32(0.69314718056f);

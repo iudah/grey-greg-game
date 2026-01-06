@@ -8,11 +8,11 @@ struct verlet_component {
   struct {
     struct vec4_st {
       float x, y, z, w;
-    } *acceleration;
-  } *streams;
+    }* acceleration;
+  }* streams;
 };
 
-extern struct verlet_component *verlet_component;
+extern struct verlet_component* verlet_component;
 
 bool initialize_verlet_component();
 

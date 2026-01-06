@@ -6,11 +6,11 @@
 struct scale_component {
   component_set set;
   struct {
-    struct vec4_st *scale;
-  } *streams;
+    struct vec4_st* scale;
+  }* streams;
 };
 
-extern struct scale_component *scale_component;
+extern struct scale_component* scale_component;
 
 bool initialize_scale_component();
 

@@ -9,11 +9,11 @@ enum ai_state_enum { AI_IDLE, AI_PATROL, AI_CHASE, AI_ATTACK, AI_FLEE };
 struct ai_component {
   component_set set;
   struct {
-    ai_state *state;
-  } *streams;
+    ai_state* state;
+  }* streams;
 };
 
-extern struct ai_component *ai_component;
+extern struct ai_component* ai_component;
 
 bool initialize_ai_component();
 

@@ -10,9 +10,9 @@ typedef struct {
   bool active;
 } entity_record;
 
-entity_record *entity_registry = NULL;
+entity_record* entity_registry = NULL;
 
-uint32_t *free_entities = NULL;
+uint32_t* free_entities = NULL;
 uint32_t number_of_free_entities = 0;
 uint32_t capacity_of_free_entities = INITIAL_CAPACITY;
 

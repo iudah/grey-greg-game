@@ -5,11 +5,11 @@ entity create_actor() {
   return actor;
 }
 
-bool actor_add_component(entity actor, struct generic_component *component) {
+bool actor_add_component(entity actor, struct generic_component* component) {
   return attach_component(actor, component);
 }
 
-void actor_remove_component(entity actor, struct generic_component *component) {
+void actor_remove_component(entity actor, struct generic_component* component) {
   return detach_component(actor, component);
 }
 

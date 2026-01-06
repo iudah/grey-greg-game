@@ -6,9 +6,9 @@
 struct aabb_component {
   component_set set;
   struct {
-    struct vec4_st *extent;
-    float *radius;
-  } *streams;
+    struct vec4_st* extent;
+    float* radius;
+  }* streams;
 };
 
 // struct generic_component {
@@ -18,7 +18,7 @@ struct aabb_component {
 //   uint8_t no_of_stream;
 // };
 
-extern struct aabb_component *aabb_component;
+extern struct aabb_component* aabb_component;
 
 bool initialize_aabb_component();
 

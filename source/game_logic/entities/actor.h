@@ -5,7 +5,7 @@
 #include "entity.h"
 
 entity create_actor();
-bool actor_add_component(entity actor, struct generic_component *component);
-void actor_remove_component(entity actor, struct generic_component *component);
+bool actor_add_component(entity actor, struct generic_component* component);
+void actor_remove_component(entity actor, struct generic_component* component);
 void destroy_actor(entity actor);
 #endif
