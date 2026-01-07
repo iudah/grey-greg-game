@@ -198,7 +198,7 @@ void event_enqueue_collision(entity entity_i, entity entity_j) {
 void resolve_collision(entity entity_i, entity entity_j) {
   event_enqueue_collision(entity_i, entity_j);
 
-  LOG("Collision between entity %d and %d", entity_i.id, entity_j.id);
+  // LOG("Collision between entity %d and %d", entity_i.id, entity_j.id);
 
 #if 0
 #warning Ad-hoc velocity correction
@@ -479,7 +479,7 @@ bool resolve_walkthrough(entity a, entity b) {
   return true;
 }
 bool walk_through_resolution(event* e) {
-  printf("______________%s\n", __FUNCTION__);
+  // printf("______________%s\n", __FUNCTION__);
 
   if (e->type != COLLISION_EVENT) return false;
 

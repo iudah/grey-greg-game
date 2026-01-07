@@ -1,6 +1,7 @@
 #include "game_main.h"
 
 #include <game_logic.h>
+#include <input_system.h>
 #include <raylib_glue.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -89,14 +90,9 @@ int game_main() {
 
     // catch up on missed time
     while (time_elapsed >= TIMESTEP) {
-      // ***
-      // LOG("Progressing game state after time %fms.", time_elapsed * 1000.);
+      update_input_system();
       systems_update();
       time_elapsed -= TIMESTEP;
-
-      // ***
-      // LOG("Time lapsed after `systems_update();`: %fms", time_elapsed *
-      // 1000.);
     }
 
     double interpolation_factor = time_elapsed / TIMESTEP;

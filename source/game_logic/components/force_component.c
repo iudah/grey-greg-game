@@ -29,7 +29,8 @@ struct vec4_st* get_force(entity e) {
 bool apply_force(entity e, float fx, float fy, float fz) {
   struct vec4_st* f = get_force(e);
   if (f) {
-    auto f1 = vld1q_f32((float[]){fx, fy, fz, 0});
+    auto f1 = vld1q_f32(
+        (float[]){fx * FORCE_SCALE, fy * FORCE_SCALE, fz * FORCE_SCALE, 0});
     auto f0 = vld1q_f32((void*)f);
     auto f2 = vaddq_f32(f1, f0);
     vst1q_f32((float*)f, f2);

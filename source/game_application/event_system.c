@@ -83,7 +83,7 @@ static inline bool is_full(event_queue* q) {
 }
 // broadcast may run on a seperate thread
 void event_handler_broadcast(event_system* system, event_queue* queue) {
-  LOG("Broadcasting events.");
+  // LOG("Broadcasting events.");
 
   uint32_t u = 0;
 
@@ -96,7 +96,7 @@ void event_handler_broadcast(event_system* system, event_queue* queue) {
 
     for (int i = 0; i < system->no_event_handler; ++i) {
       if (event->type) {
-        LOG("Events: %" PRIu32 ", System: %" PRIu32 ".", ++u, i + 1);
+        // LOG("Events: %" PRIu32 ", System: %" PRIu32 ".", ++u, i + 1);
 
         system->event_handler[i](event);
       }

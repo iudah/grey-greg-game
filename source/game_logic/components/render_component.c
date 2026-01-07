@@ -57,7 +57,7 @@ void interpolate_positions(float interpolation_factor) {
 
     vst1q_f32((void*)&curr_interp_pos[i], interp);
 
-    printf("Entity %i at (%g, %g, %g)\n", e.id, curr_interp_pos[i].x,
-           curr_interp_pos[i].y, curr_interp_pos[i].z);
+    // printf("Entity %i at (%g, %g, %g)\n", e.id, curr_interp_pos[i].x,
+    //        curr_interp_pos[i].y, curr_interp_pos[i].z);
   }
 }

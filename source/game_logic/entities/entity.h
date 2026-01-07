@@ -14,6 +14,8 @@ typedef struct {
   uint32_t generation : 8;
 } entity;
 
+extern entity player;
+
 entity create_entity();
 void destroy_entity(entity e);
 
