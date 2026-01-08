@@ -1,0 +1,13 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+Standard: Latest
+
+ColumnLimit: 100
+
+PointerAlignment: Right
+
+AlignConsecutiveMacros: true
+
+SortIncludes: true
+...
