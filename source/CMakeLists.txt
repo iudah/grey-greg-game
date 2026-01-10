@@ -167,7 +167,11 @@ find_package(Threads REQUIRED)
 include(sources.cmake)
 include(headers.cmake)
 
+if("${PLATFORM}" STREQUAL "Android")
 add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
+else()
+add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
+endif()
 add_library(grey::${TARGET} ALIAS ${TARGET})
 
 target_include_directories(
@@ -181,16 +185,16 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
          $<INSTALL_INTERFACE:include>)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
-   OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
-   OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
-  target_link_libraries(${TARGET} PUBLIC ws2_32)
-endif()
-
 target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PUBLIC Threads::Threads)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
+   OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
+   OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+  target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
+endif()
 
 if("${PLATFORM}" STREQUAL "Android")
   target_link_libraries(
@@ -216,8 +220,6 @@ if("${PLATFORM}" STREQUAL "Android")
     -Wl,-z,noexecstack
     -Wl,-z,relro
     -Wl,-z,now)
-else()
-  target_link_libraries(${TARGET} PUBLIC gdi32 winmm)
 endif()
 
 target_link_libraries(${TARGET} PUBLIC raylib::raylib)
