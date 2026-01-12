@@ -42,8 +42,7 @@ if(NOT TARGET memalloc::memalloc)
   message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
-    # GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
-    SOURCE_DIR "/data/data/com.termux/files/home/storage/shared/Jay/memalloc"
+    GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
@@ -75,8 +74,7 @@ if(NOT TARGET zot::zot)
   message(STATUS "zot not found, adding as ExternalProject")
   ExternalProject_Add(
     zot
-    SOURCE_DIR "/data/data/com.termux/files/home/storage/shared/Jay/zot"
-    # GIT_REPOSITORY "https://github.com/iudah/zot.git"
+    GIT_REPOSITORY "https://github.com/iudah/zot.git"
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
@@ -123,8 +121,7 @@ if(NOT TARGET raylib::raylib)
 
   ExternalProject_Add(
     raylib
-    # GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-    SOURCE_DIR "/data/data/com.termux/files/home/storage/shared/Jay/raylib"
+    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
     GIT_SHALLOW TRUE
     GIT_CLONE_DEPTH 1
     INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
