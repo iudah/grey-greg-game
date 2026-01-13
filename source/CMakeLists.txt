@@ -133,8 +133,7 @@ if(${BUILD_RAYLIB})
 
     ExternalProject_Add(
       raylib
-      # GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-      SOURCE_DIR "/data/data/com.termux/files/home/storage/shared/Jay/raylib"
+      GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
       GIT_SHALLOW TRUE
       GIT_CLONE_DEPTH 1
       INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
