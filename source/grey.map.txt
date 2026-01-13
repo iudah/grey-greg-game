@@ -1,6 +1,0 @@
-GREY{
-    global:
-        game_main;
-    local:
-    *;
-};

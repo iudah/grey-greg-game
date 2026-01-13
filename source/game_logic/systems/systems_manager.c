@@ -8,14 +8,14 @@
 #define MAX_SYSTEM 32
 
 typedef struct {
-  system_update_fn_t* system;
+  system_update_fn_t *system;
   uint32_t no_system;
   uint32_t system_cap;
 } system_manager;
 
 static system_manager manager;
 
-void static __attribute__((constructor(202))) init() {
+void static __attribute__((constructor(202))) init_system_manager_tl() {
   manager.system_cap = MAX_SYSTEM;
   manager.system = zmalloc(manager.system_cap * sizeof(*manager.system));
   manager.no_system = 0;

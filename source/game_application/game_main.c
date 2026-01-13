@@ -1,18 +1,19 @@
 #include "game_main.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#define HAS_WIN32_API 1
+#else
+#include <time.h>
+#include <unistd.h>
+#endif
+
 #include <game_logic.h>
 #include <input_system.h>
 #include <raylib_glue.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <zot.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <time.h>
-#include <unistd.h>
-#endif
 
 #ifdef _WIN32
 #define signal(...)
@@ -41,7 +42,7 @@ typedef struct timespec ztimespec;
 void quit_game(int signal);
 void game_cleanup();
 static inline void register_interrupt_signal_handler();
-static inline bool get_time_now(ztimespec* ts);
+static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
 static void render_frame(float interpolation_factor);
 
@@ -53,7 +54,7 @@ ztimespec iter_start, iter_end;
 void use_2d() { is_2d = true; }
 
 static struct {
-  char* title;
+  char *title;
   uint32_t screen_width, screen_height, FPS;
 } game_config = {"Grey with Raylib", 800, 450, 60};
 
@@ -65,10 +66,11 @@ int game_main() {
 
   get_win32_frequency();
 
+#ifndef NO_RAYLIB
   // Initialize window
-  init_window(game_config.screen_width, game_config.screen_height,
-              game_config.title);
+  init_window(game_config.screen_width, game_config.screen_height, game_config.title);
   set_FPS(game_config.FPS);
+#endif
 
   LOG("Game started.");
 
@@ -78,7 +80,11 @@ int game_main() {
   double time_elapsed = 0;
   double dt = 0;
 
-  while (!quit && !window_should_close()) {
+  while (!quit
+#ifndef NO_RAYLIB
+         && !window_should_close()
+#endif
+  ) {
     double frame_time = compute_lapsed_time();
     time_elapsed += frame_time;
 
@@ -102,12 +108,14 @@ int game_main() {
     render_frame(interpolation_factor);
   }
 
+#ifndef NO_RAYLIB
   close_window();
+#endif
   return 0;
 }
 
-void set_game_screen_config(uint32_t screen_width, uint32_t screen_height,
-                            char* title, uint32_t FPS) {
+void set_game_screen_config(uint32_t screen_width, uint32_t screen_height, char *title,
+                            uint32_t FPS) {
   game_config.title = zstrdup(title);
   game_config.screen_height = screen_height;
   game_config.screen_width = screen_width;
@@ -148,7 +156,7 @@ void register_interrupt_signal_handler() {
 #endif
 }
 
-static inline bool get_time_now(ztimespec* ts) {
+static inline bool get_time_now(ztimespec *ts) {
 #ifdef _WIN32
   QueryPerformanceCounter(ts);
   return true;
@@ -162,8 +170,8 @@ static inline double compute_lapsed_time() {
 #ifdef _WIN32
   double time_elapsed = (iter_end.QuadPart - iter_start.QuadPart) / freq;
 #else
-  double time_elapsed = (iter_end.tv_sec - iter_start.tv_sec) +
-                        (iter_end.tv_nsec - iter_start.tv_nsec) / 1e9;
+  double time_elapsed =
+      (iter_end.tv_sec - iter_start.tv_sec) + (iter_end.tv_nsec - iter_start.tv_nsec) / 1e9;
 #endif
   get_time_now(&iter_start);
   return time_elapsed;

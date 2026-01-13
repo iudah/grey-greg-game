@@ -8,7 +8,7 @@
 #include <math.h>
 #include <physics_system.h>
 #include <position_component.h>
-#include <raylib.h>
+#include <raylib_glue.h>
 #include <render_component.h>
 #include <render_system.h>
 #include <stdint.h>
@@ -25,9 +25,9 @@ typedef struct generic_component generic_component_t;
 entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   entity e = create_entity();
 
-  actor_add_component(e, (generic_component_t*)position_component);
-  actor_add_component(e, (generic_component_t*)aabb_component);
-  actor_add_component(e, (generic_component_t*)render_component);
+  actor_add_component(e, (generic_component_t *)position_component);
+  actor_add_component(e, (generic_component_t *)aabb_component);
+  actor_add_component(e, (generic_component_t *)render_component);
 
   set_entity_position(e, pos_x, pos_y, 0);
   set_entity_aabb_lim(e, SPRITE_X, SPRITE_Y, 0);
@@ -37,15 +37,13 @@ entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   return e;
 }
 
-entity terrain(float pos_x, float pos_y, uint32_t rgba) {
-  return sprite(pos_x, pos_y, rgba);
-}
+entity terrain(float pos_x, float pos_y, uint32_t rgba) { return sprite(pos_x, pos_y, rgba); }
 
 entity person(float pos_x, float pos_y, float vel_x, float vel_y) {
   entity e = sprite(pos_x, pos_y, 0xb5651d);
-  actor_add_component(e, (generic_component_t*)velocity_component);
-  actor_add_component(e, (generic_component_t*)force_component);
-  actor_add_component(e, (generic_component_t*)mass_component);
+  actor_add_component(e, (generic_component_t *)velocity_component);
+  actor_add_component(e, (generic_component_t *)force_component);
+  actor_add_component(e, (generic_component_t *)mass_component);
   // set_entity_velocity(e, vel_x, vel_y, 0);
   set_entity_velocity(e, 0, 0, 0);
   set_entity_mass(e, 10);
@@ -53,18 +51,14 @@ entity person(float pos_x, float pos_y, float vel_x, float vel_y) {
   return e;
 }
 
-entity rock(float pos_x, float pos_y) {
-  return terrain(pos_x, pos_y, 0x7f8386);
-}
+entity rock(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0x7f8386); }
 
-entity grass(float pos_x, float pos_y) {
-  return terrain(pos_x, pos_y, 0x3F9B0B);
-}
+entity grass(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0x3F9B0B); }
 
 entity mud(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0xb5651d); }
 
 struct {
-  entity* sprite;
+  entity *sprite;
   uint32_t count;
   uint32_t cap;
 } world;
@@ -88,10 +82,11 @@ bool world_append_sprite(entity e) {
   return true;
 }
 
-bool player_movement(event* e) {
+bool player_movement(event *e) {
+#ifndef NO_RAYLIB
 #define XY_ACCEL 10.f
   if (e->type == KEY_DOWN_EVENT) {
-    switch (*(KeyboardKey*)e->info) {
+    switch (*(KeyboardKey *)e->info) {
       case KEY_UP:
         add_force(player, (float[]){0, -110 * get_mass(player), 0, 0});
         break;
@@ -112,25 +107,28 @@ bool player_movement(event* e) {
   if (e->type == KEY_RELEASED_EVENT) {
     // LOG("%s\n", __FUNCTION__);
     // exit(0);
-    switch (*(int*)e->info) {
+    switch (*(int *)e->info) {
       case KEY_UP:
         // add_force(player, (float[]){0, 11 * get_mass(player), 0, 0});
         break;
 
       case KEY_LEFT:
       case KEY_RIGHT:
-        add_force(player, (float[]){-get_velocity(player)->x / TIMESTEP /
-                                        FORCE_SCALE * get_mass(player),
-                                    0, 0, 0});
+        add_force(player,
+                  (float[]){-get_velocity(player)->x / TIMESTEP / FORCE_SCALE * get_mass(player), 0,
+                            0, 0});
         break;
 
       default:
         break;
     }
   }
+#endif
+  return true;
 }
 
 void init_world() {
+  LOG("%s", __FUNCTION__);
   set_game_screen_config(SCREEN_X, SCREEN_Y, "Grey Greg", 60);
 
   register_system_update((system_update_fn_t)gravity_system_update);
@@ -141,7 +139,7 @@ void init_world() {
   event_handler_register(get_default_event_default(), walk_through_resolution);
   event_handler_register(event__system, player_movement);
 
-#define EPSILON (GREY_AABB_GAP)
+#define EPSILON  (GREY_AABB_GAP)
 #define SPRITE_W (SPRITE_X + EPSILON)
 #define SPRITE_H (SPRITE_Y + EPSILON)
 
@@ -210,8 +208,7 @@ void init_world() {
       // Enemy spawning
       if (levels[i].enemies > 0) {
         if (j >= levels[i].length - levels[i].enemies) {
-          world_append_sprite(
-              person(current_x, current_y - 40 - EPSILON * 4, 10, 0));
+          world_append_sprite(person(current_x, current_y - 40 - EPSILON * 4, 10, 0));
         }
       }
     }

@@ -16,6 +16,7 @@ include(../common.cmake)
 # Option to enable or disable phony main
 option(BUILD_PHONY_MAIN "Build phony main" ON)
 option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
+option(BUILD_RAYLIB "Build Raylib with Grey" ON)
 
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -28,12 +29,22 @@ if(CMAKE_TOOLCHAIN_FILE)
   list(APPEND COMMON_TOOLCHAIN_ARGS
        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 endif()
-if(ANDROID)
+if("${PLATFORM}" STREQUAL "Android")
+  set(PLATFORM_IS_ANDROID TRUE)
+  set(ENABLE_SANITIZERS OFF)
+else()
+  set(PLATFORM_IS_ANDROID FALSE)
+  if(ANDROID)
+    set(BUILD_RAYLIB FALSE)
+  endif()
+endif()
+if(ANDROID AND ${PLATFORM_IS_ANDROID})
   if(NOT ANDROID_NDK)
     set(ANDROID_NDK $ENV{ANDROID_NDK})
   endif()
   list(APPEND COMMON_TOOLCHAIN_ARGS "-DANDROID_ABI=${ANDROID_ABI}"
-       "-DANDROID_PLATFORM=${ANDROID_PLATFORM}" "-DANDROID_NDK=${ANDROID_NDK}")
+       "-DANDROID_PLATFORM=${ANDROID_PLATFORM}" "-DANDROID_NDK=${ANDROID_NDK}"
+       "-DENABLE_SANITIZERS=${ENABLE_SANITIZERS}")
 endif()
 
 find_package(memalloc QUIET)
@@ -49,9 +60,9 @@ if(NOT TARGET memalloc::memalloc)
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
-    BUILD_ALWAYS OFF
+    # BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
-    UPDATE_DISCONNECTED TRUE
+    # UPDATE_DISCONNECTED TRUE
     BUILD_BYPRODUCTS
       "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
@@ -81,9 +92,9 @@ if(NOT TARGET zot::zot)
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
-    BUILD_ALWAYS OFF
+    # BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
-    UPDATE_DISCONNECTED TRUE
+    # UPDATE_DISCONNECTED TRUE
     BUILD_BYPRODUCTS
       "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
@@ -100,54 +111,57 @@ set_target_properties(
     "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
     INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include")
 
-find_package(raylib QUIET)
-add_library(raylib_imported STATIC IMPORTED)
-if(NOT TARGET raylib::raylib)
-  message(STATUS "raylib not found, adding as ExternalProject")
+if(${BUILD_RAYLIB})
+  find_package(raylib QUIET)
+  add_library(raylib_imported STATIC IMPORTED)
+  if(NOT TARGET raylib::raylib)
+    message(STATUS "raylib not found, adding as ExternalProject")
 
-  set(RAYLIB_EXTRA_ARGS "")
-  if("${PLATFORM}" STREQUAL "Android" OR ANDROID)
-    set(PLATFORM Android)
-    set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=MinSizeRel -DPLATFORM=Android
-                          -DCUSTOMIZE_BUILD=ON ${COMMON_TOOLCHAIN_ARGS})
-  else()
-    if(NOT "${PLATFORM}" STREQUAL "Desktop" AND NOT "${PLATFORM}" STREQUAL
-                                                "Web")
-      set(PLATFORM Desktop)
+    set(RAYLIB_EXTRA_ARGS "")
+    if(${PLATFORM_IS_ANDROID} AND ANDROID)
+      set(PLATFORM Android)
+      set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=MinSizeRel -DPLATFORM=Android
+                            -DCUSTOMIZE_BUILD=ON ${COMMON_TOOLCHAIN_ARGS})
+    else()
+      if(NOT "${PLATFORM}" STREQUAL "Desktop" AND NOT "${PLATFORM}" STREQUAL
+                                                  "Web")
+        set(PLATFORM Desktop)
+      endif()
+      set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                            -DPLATFORM=${PLATFORM})
     endif()
-    set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                          -DPLATFORM=${PLATFORM})
+
+    ExternalProject_Add(
+      raylib
+      # GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+      SOURCE_DIR "/data/data/com.termux/files/home/storage/shared/Jay/raylib"
+      GIT_SHALLOW TRUE
+      GIT_CLONE_DEPTH 1
+      INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
+      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXAMPLES=OFF
+                 -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+                 ${RAYLIB_EXTRA_ARGS}
+      # BUILD_ALWAYS OFF
+      STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+      # UPDATE_DISCONNECTED TRUE
+      BUILD_BYPRODUCTS
+        "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    )
+
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include")
+
+    add_dependencies(raylib_imported raylib)
+    add_library(raylib::raylib ALIAS raylib_imported)
   endif()
-
-  ExternalProject_Add(
-    raylib
-    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-    GIT_SHALLOW TRUE
-    GIT_CLONE_DEPTH 1
-    INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXAMPLES=OFF
-               -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-               ${RAYLIB_EXTRA_ARGS}
-    BUILD_ALWAYS OFF
-    STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
-    UPDATE_DISCONNECTED TRUE
-    BUILD_BYPRODUCTS
+  set_target_properties(
+    raylib_imported
+    PROPERTIES
+      IMPORTED_LOCATION
       "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-  )
-
-  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include")
-
-  add_dependencies(raylib_imported raylib)
-  add_library(raylib::raylib ALIAS raylib_imported)
+      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include")
 endif()
-set_target_properties(
-  raylib_imported
-  PROPERTIES
-    IMPORTED_LOCATION
-    "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include")
 
-if("${PLATFORM}" STREQUAL "Android")
+if(${PLATFORM_IS_ANDROID})
   set(NATIVE_APP_GLUE ${ANDROID_NDK}/sources/android/native_app_glue/)
 
   add_library(
@@ -170,9 +184,11 @@ find_package(Threads REQUIRED)
 include(sources.cmake)
 include(headers.cmake)
 
-if("${PLATFORM}" STREQUAL "Android")
+if(${PLATFORM_IS_ANDROID})
   add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
   target_compile_options(${TARGET} PRIVATE -fPIC)
+  target_compile_definitions(${TARGET} PRIVATE USE_ANDROID_LOG
+                                               TAG="${PROJECT_NAME}")
 else()
   add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
 endif()
@@ -200,7 +216,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
   target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
-if("${PLATFORM}" STREQUAL "Android")
+if(${PLATFORM_IS_ANDROID})
   target_link_libraries(
     ${TARGET}
     PUBLIC native_app_glue
@@ -215,7 +231,7 @@ if("${PLATFORM}" STREQUAL "Android")
 
   target_link_options(
     ${TARGET}
-    PRIVATE
+    PUBLIC
     # cmake-format: off
     -u ANativeActivity_onCreate
    # cmake-format: on
@@ -226,7 +242,12 @@ if("${PLATFORM}" STREQUAL "Android")
     -Wl,-z,now)
 endif()
 
-target_link_libraries(${TARGET} PUBLIC raylib::raylib)
+if(${BUILD_RAYLIB})
+  target_link_libraries(${TARGET} PUBLIC raylib::raylib)
+else()
+  target_compile_options(${TARGET} PRIVATE -DNO_RAYLIB=1)
+endif()
+
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
 include(CheckCCompilerFlag)
@@ -269,7 +290,7 @@ if(NOT MSVC)
   endif()
 endif()
 
-if(BUILD_PHONY_MAIN)
+if(BUILD_PHONY_MAIN AND NOT ${PLATFORM_IS_ANDROID})
   file(WRITE ${CMAKE_BINARY_DIR}/grey_phony_main.c
        "int game_main();\nint main() { game_main(); return 0; }\n")
   add_executable(grey_phony ${CMAKE_BINARY_DIR}/grey_phony_main.c)
@@ -285,7 +306,7 @@ install(
   INCLUDES
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-if("${PLATFORM}" STREQUAL "Android")
+if(${PLATFORM_IS_ANDROID})
   install(
     TARGETS native_app_glue
     EXPORT GreyTargets
@@ -298,17 +319,23 @@ endif()
 
 install(
   FILES
-    "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY "${CMAKE_BINARY_DIR}/zot/include/"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include/"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if(${BUILD_RAYLIB})
+  install(
+    FILES
+      "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include/"
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 

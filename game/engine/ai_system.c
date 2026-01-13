@@ -8,21 +8,21 @@
 #include "simd.h"
 #include "systems_manager.h"
 
-#define FLEE_SPEED 0.5f
-#define CHASE_SPEED 0.45f
+#define FLEE_SPEED   0.5f
+#define CHASE_SPEED  0.45f
 #define PATROL_SPEED 0.4f
 
-#define CHASE_RADIUS 5.0f
+#define CHASE_RADIUS      5.0f
 #define CHASE_LOST_RADIUS 7.5f
-#define FLEE_RADIUS 2.0f
-#define ATTACK_RANGE 1.0f
+#define FLEE_RADIUS       2.0f
+#define ATTACK_RANGE      1.0f
 
 #define WAYPOINT_THRESHOLD GREY_ZERO
 
-float distance(struct vec4_st* npc_pos, struct vec4_st* player_pos, bool flee,
-               float32x4_t* diff_ptr);
+float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
+               float32x4_t *diff_ptr);
 
-void flee(entity e, struct vec4_st* player_pos, float vel[4]) {
+void flee(entity e, struct vec4_st *player_pos, float vel[4]) {
   float32x4_t diff;
 
   float dist = distance(get_position(e), player_pos, true, &diff);
@@ -31,13 +31,13 @@ void flee(entity e, struct vec4_st* player_pos, float vel[4]) {
     // entity continues with it's velocity
     return;  // avoid div-by-zero
 
-  auto velocity = vmulq_n_f32(
-      diff, FLEE_SPEED / dist);  // normalize(npc_pos - player_pos)*FLEE_SPEED;
+  auto velocity =
+      vmulq_n_f32(diff, FLEE_SPEED / dist);  // normalize(npc_pos - player_pos)*FLEE_SPEED;
 
   vst1q_f32(vel, velocity);
 }
 
-void chase(entity e, struct vec4_st* player_pos, float vel[4]) {
+void chase(entity e, struct vec4_st *player_pos, float vel[4]) {
   float32x4_t diff;
 
   float dist = distance(get_position(e), player_pos, false, &diff);
@@ -46,8 +46,7 @@ void chase(entity e, struct vec4_st* player_pos, float vel[4]) {
     // entity continues with it's velocity
     return;  // avoid div-by-zero
 
-  auto velocity = vmulq_n_f32(
-      diff, CHASE_SPEED / dist);  // normalize(npc_pos - player_pos);
+  auto velocity = vmulq_n_f32(diff, CHASE_SPEED / dist);  // normalize(npc_pos - player_pos);
 
   vst1q_f32(vel, velocity);
 }
@@ -58,8 +57,7 @@ void perform_attack(entity e, entity player) {
 }
 
 void fight(entity e, entity player, float vel[4]) {
-  if (distance(get_position(e), get_position(player), true, NULL) <
-      ATTACK_RANGE) {
+  if (distance(get_position(e), get_position(player), true, NULL) < ATTACK_RANGE) {
     perform_attack(e, player);
     memset(vel, 0, sizeof(*vel) * 4);
   } else {
@@ -69,8 +67,7 @@ void fight(entity e, entity player, float vel[4]) {
 
 void patrol(entity e, float vel[4]) {
   float32x4_t diff;
-  float dist = distance(
-      get_position(e), (struct vec4_st*)get_next_patrol_point(e), false, &diff);
+  float dist = distance(get_position(e), (struct vec4_st *)get_next_patrol_point(e), false, &diff);
 
   if (dist < WAYPOINT_THRESHOLD) {
     advance_patrol_index(e);
@@ -80,23 +77,20 @@ void patrol(entity e, float vel[4]) {
     // entity continues with it's velocity
     return;  // avoid div-by-zero
 
-  auto velocity = vmulq_n_f32(
-      diff, PATROL_SPEED / dist);  // normalize(npc_pos - player_pos);
+  auto velocity = vmulq_n_f32(diff, PATROL_SPEED / dist);  // normalize(npc_pos - player_pos);
 
   vst1q_f32(vel, velocity);
 }
 
 void idle(entity e) { set_velocity(e, (float[3]){0, 0, 0}); }
 
-ai_state get_ai_state(entity npc) {
-  return ai_component->streams->state[npc.id];
-}
+ai_state get_ai_state(entity npc) { return ai_component->streams->state[npc.id]; }
 
 void ai_update_state(entity npc, entity player) {
-  ai_state* states = ai_component->streams->state;
+  ai_state *states = ai_component->streams->state;
 
-  struct vec4_st* npc_pos = get_position(npc);
-  struct vec4_st* player_pos = get_position(player);
+  struct vec4_st *npc_pos = get_position(npc);
+  struct vec4_st *player_pos = get_position(player);
 
   if (!npc_pos || !player_pos) return;
 
@@ -146,7 +140,7 @@ void ai_update_state(entity npc, entity player) {
 }
 
 void ai_system_update() {
-  ai_state* states = ai_component->streams->state;
+  ai_state *states = ai_component->streams->state;
   float velocity[4];
   extern entity player;
 
@@ -189,7 +183,7 @@ void ai_system_update() {
   }
 }
 
-void static __attribute__((constructor(202))) init() {
+void static __attribute__((constructor(202))) initai_system_tl() {
   initialize_ai_component();
   register_system_update((system_update_fn_t)ai_system_update);
 }

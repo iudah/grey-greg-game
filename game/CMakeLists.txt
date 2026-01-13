@@ -14,7 +14,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 include(../common.cmake)
 
 option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
+option(BUILD_RAYLIB "Build Raylib with Grey" ON)
 
+message(STATUS "Project: ${PROJECT_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
@@ -35,9 +37,21 @@ endif()
 include(sources.cmake)
 include(headers.cmake)
 
-if("${PLATFORM}" STREQUAL "Android" OR ANDROID)
+if("${PLATFORM}" STREQUAL "Android")
+  set(PLATFORM_IS_ANDROID TRUE)
+  set(ENABLE_SANITIZERS OFF)
+else()
+  set(PLATFORM_IS_ANDROID FALSE)
+  if(ANDROID)
+    set(BUILD_RAYLIB FALSE)
+  endif()
+endif()
+
+if(${PLATFORM_IS_ANDROID})
   set(PLATFORM Android)
   add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
+  target_compile_definitions(${TARGET} PRIVATE TAG="${PROJECT_NAME}"
+                                               USE_ANDROID_LOG)
 else()
   add_executable(${TARGET} ${SOURCE_FILES} ${HEADER_FILES})
 endif()
@@ -48,6 +62,10 @@ target_link_libraries(${TARGET} PUBLIC Threads::Threads)
 target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PRIVATE grey::grey)
 target_compile_features(${TARGET} PUBLIC c_std_23)
+
+if(NOT ${BUILD_RAYLIB})
+  target_compile_definitions(${TARGET} PRIVATE -NO_RAYLIB=1)
+endif()
 
 include(CheckCCompilerFlag)
 

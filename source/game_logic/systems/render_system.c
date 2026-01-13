@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 #include <math.h>
-#include <raylib.h>
+#include <raylib_glue.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +19,8 @@
 #include "velocity_component.h"
 
 void render_system_update() {
-  struct vec4_st* rot = rotation_component->streams->rotation;
-  struct vec4_st* scale = scale_component->streams->scale;
+  struct vec4_st *rot = rotation_component->streams->rotation;
+  struct vec4_st *scale = scale_component->streams->scale;
 
   for (uint32_t i = 0; i < scale_component->set.count; ++i) {
     // compute transform matrix
@@ -28,7 +28,7 @@ void render_system_update() {
 }
 
 uint64_t count = 0;
-char* frame = 0;
+char *frame = 0;
 void ppm_render() {
   const int width = SCREEN_X;
   const int height = SCREEN_Y;
@@ -38,31 +38,26 @@ void ppm_render() {
   else
     memset(frame, 0xff, width * height * 3);
 
-  struct vec4_st* extent = aabb_component->streams->extent;
-  entity* e = aabb_component->set.dense;
-  struct vec4_st* position = render_component->streams->interpolated_position;
+  struct vec4_st *extent = aabb_component->streams->extent;
+  entity *e = aabb_component->set.dense;
+  struct vec4_st *position = render_component->streams->interpolated_position;
 
   for (uint32_t i = 0; i < aabb_component->set.count; i++) {
     uint32_t j;
-    if (!component_get_dense_id((struct generic_component*)position_component,
-                                e[i], &j))
-      continue;
+    if (!component_get_dense_id((struct generic_component *)position_component, e[i], &j)) continue;
 
     uint32_t r_idx;
-    if (!component_get_dense_id((struct generic_component*)render_component,
-                                e[i], &r_idx))
+    if (!component_get_dense_id((struct generic_component *)render_component, e[i], &r_idx))
       continue;
 
-    struct vec4_st* pos = &position[j];
-    for (int64_t x = (int64_t)(pos->x - extent[i].x);
-         x < (int64_t)(pos->x + extent[i].x); ++x) {
+    struct vec4_st *pos = &position[j];
+    for (int64_t x = (int64_t)(pos->x - extent[i].x); x < (int64_t)(pos->x + extent[i].x); ++x) {
       if (x < 0 || x >= width) continue;
 
-      for (int64_t y = (int64_t)(pos->y - extent[i].y);
-           y < (int64_t)(pos->y + extent[i].y); ++y) {
+      for (int64_t y = (int64_t)(pos->y - extent[i].y); y < (int64_t)(pos->y + extent[i].y); ++y) {
         if (y < 0 || y >= height) continue;
 
-        char* pxl = &frame[(uint32_t)(y * width * 3 + x * 3)];
+        char *pxl = &frame[(uint32_t)(y * width * 3 + x * 3)];
         pxl[0] = render_component->streams->color[r_idx].x;
         pxl[1] = render_component->streams->color[r_idx].y;
         pxl[2] = render_component->streams->color[r_idx].z;
@@ -75,7 +70,7 @@ void ppm_render() {
 
   char path[255];
   snprintf(path, 255, "tmp/img_%08" PRIu64 ".ppm", count++);
-  FILE* f = fopen(path, "wb");
+  FILE *f = fopen(path, "wb");
 
   if (0) {
     LOG("`tmp/img_%08" PRIu64 ".ppm` could not be open.", count - 1);
@@ -90,19 +85,17 @@ void ppm_render() {
   }
 }
 
+#ifndef NO_RAYLIB
 void raylib_render() {
   BeginDrawing();
   ClearBackground(RAYWHITE);
   for (uint32_t i = 0; i < render_component->set.count; ++i) {
     entity e = render_component->set.dense[i];
     uint32_t aabb_i;
-    if (!component_get_dense_id((struct generic_component*)aabb_component, e,
-                                &aabb_i))
-      continue;
+    if (!component_get_dense_id((struct generic_component *)aabb_component, e, &aabb_i)) continue;
 
     uint32_t pos_i;
-    if (!component_get_dense_id((struct generic_component*)position_component,
-                                e, &pos_i))
+    if (!component_get_dense_id((struct generic_component *)position_component, e, &pos_i))
       continue;
 
     DrawRectangle(render_component->streams->interpolated_position[pos_i].x -
@@ -117,5 +110,11 @@ void raylib_render() {
   }
   EndDrawing();
 }
-
-void render() { raylib_render(); }
+#endif
+void render() {
+#ifndef NO_RAYLIB
+  raylib_render();
+#else
+  // ppm_render();
+#endif
+}
