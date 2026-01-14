@@ -14,6 +14,8 @@ void init_window(uint32_t screen_width, uint32_t screen_height, char *title);
 void set_FPS(uint32_t FPS);
 bool window_should_close();
 void close_window();
+int get_screen_width();
+int get_screen_height();
 
 #endif
 #endif

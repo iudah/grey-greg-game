@@ -98,6 +98,9 @@ int game_main() {
     while (time_elapsed >= TIMESTEP) {
       update_input_system();
       systems_update();
+#if defined(__ANDROID__) && !defined(NO_RAYLIB)
+      render_controller();
+#endif
       time_elapsed -= TIMESTEP;
     }
 

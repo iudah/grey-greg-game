@@ -3,7 +3,7 @@
 
 #include "component_base.h"
 
-#define FORCE_SCALE 6
+#define FORCE_SCALE 10
 
 struct force_component {
   component_set set;

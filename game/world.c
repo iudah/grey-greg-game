@@ -8,6 +8,7 @@
 #include <math.h>
 #include <physics_system.h>
 #include <position_component.h>
+#include <raylib.h>
 #include <raylib_glue.h>
 #include <render_component.h>
 #include <render_system.h>
@@ -84,12 +85,14 @@ bool world_append_sprite(entity e) {
 
 bool player_movement(event *e) {
 #ifndef NO_RAYLIB
-#define XY_ACCEL 10.f
+#define XY_ACCEL 40.f
+#define JUMP     140.f
   if (e->type == KEY_DOWN_EVENT) {
     switch (*(KeyboardKey *)e->info) {
-      case KEY_UP:
-        add_force(player, (float[]){0, -110 * get_mass(player), 0, 0});
-        break;
+      case KEY_UP: {
+        add_force(player, (float[]){0, -JUMP * get_mass(player), 0, 0});
+        DrawText("UP", 720, 360, 24, RED);
+      } break;
 
       case KEY_LEFT:
         add_force(player, (float[]){-XY_ACCEL * get_mass(player), 0, 0, 0});
@@ -138,6 +141,12 @@ void init_world() {
 
   event_handler_register(get_default_event_default(), walk_through_resolution);
   event_handler_register(event__system, player_movement);
+
+#undef SCREEN_X
+#undef SCREEN_Y
+
+#define SCREEN_X 1440
+#define SCREEN_Y 720
 
 #define EPSILON  (GREY_AABB_GAP)
 #define SPRITE_W (SPRITE_X + EPSILON)

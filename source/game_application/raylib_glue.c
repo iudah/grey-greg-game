@@ -11,5 +11,7 @@ void init_window(uint32_t screen_width, uint32_t screen_height, char *title) {
 void set_FPS(uint32_t FPS) { return SetTargetFPS(FPS); }
 bool window_should_close() { return WindowShouldClose(); }
 void close_window() { return CloseWindow(); }
+int get_screen_width() { return GetScreenWidth(); }
+int get_screen_height() { return GetScreenHeight(); }
 
 #endif
