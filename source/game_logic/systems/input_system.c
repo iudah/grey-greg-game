@@ -1,6 +1,5 @@
 #include "input_system.h"
 
-#include <arm_neon.h>
 #include <event_system.h>
 #include <math.h>
 #include <raylib.h>
@@ -102,8 +101,8 @@ static const GamepadButton pad_button[] = {[PAD_A] = GAMEPAD_BUTTON_RIGHT_FACE_U
 #endif
 
 Vector2 project_pt_x(Vector2 center, Vector2 pt, float radius) {
-  float32x2_t v_pt = {pt.x - center.x, pt.y - center.y};
-  float32x2_t v_rad = {radius, radius};
+  float32x2_t v_pt = vld1_f32(((float[]){pt.x - center.x, pt.y - center.y}));
+  float32x2_t v_rad = vld1_f32(((float[]){radius, radius}));
 
   float32x2_t result = vdiv_f32(v_pt, v_rad);
 
@@ -148,7 +147,8 @@ void update_input_system() {
         *(Vector2 *)&stick[STICK_KNOB] = pt;
       }
 
-      Vector2 pad_pt = project_pt_x(base_center, pt, stick[STICK_BASE].radius);
+      Vector2 pad_pt =
+          project_pt_x(base_center, *(Vector2 *)&stick[STICK_KNOB], stick[STICK_BASE].radius);
 
       if (pad_pt.x > 0.25) SET_BIT(current_trigger, G_KEY_RIGHT);
       if (pad_pt.x < -0.25) SET_BIT(current_trigger, G_KEY_LEFT);
@@ -163,18 +163,24 @@ void update_input_system() {
   }
 
   for (int i = 0; i < 4; ++i) {
-    if (IS_SET(current_trigger, i) && !IS_SET(previous_trigger, i))
-      event_trigger(event__queue, (void *)&key[i], KEY_DOWN_EVENT);
+    // Flood event while held (IsKeyDown)
+    if (IS_SET(current_trigger, i)) event_trigger(event__queue, (void *)&key[i], KEY_DOWN_EVENT);
     if (!IS_SET(current_trigger, i) && IS_SET(previous_trigger, i))
       event_trigger(event__queue, (void *)&key[i], KEY_RELEASED_EVENT);
 
+    // Edge trigger (IsKeyPressed)
     if (IS_SET(current_action, i) && !IS_SET(previous_action, i)) {
-      event_trigger(event__queue, (void *)&pad_button[i], KEY_DOWN_EVENT);
       pad[i].height += action_btn_expansn;
       pad[i].width += action_btn_expansn;
       pad[i].x += action_btn_expansn / 2;
       pad[i].y += action_btn_expansn / 2;
     }
+
+    // Flood event while held (IsKeyDown)
+    if (IS_SET(current_action, i)) {
+      event_trigger(event__queue, (void *)&pad_button[i], KEY_DOWN_EVENT);
+    }
+
     if (!IS_SET(current_action, i) && IS_SET(previous_action, i)) {
       event_trigger(event__queue, (void *)&pad_button[i], KEY_RELEASED_EVENT);
       pad[i].height -= action_btn_expansn;
