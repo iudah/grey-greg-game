@@ -1,7 +1,6 @@
 set(SOURCE_FILES
     game_application/event_system.c
     game_application/game_main.c
-    game_application/raylib_glue.c
     game_logic/components/aabb_component.c
     game_logic/components/component.c
     game_logic/components/component_manager.c
@@ -17,10 +16,11 @@ set(SOURCE_FILES
     game_logic/entities/actor.c
     game_logic/entities/actor_manager.c
     game_logic/entities/entity.c
-    game_logic/network.c
-    game_logic/systems/gravity_system.c
     game_logic/systems/input_system.c
-    game_logic/systems/physics_system.c
-    game_logic/systems/render_system.c
     game_logic/systems/systems_manager.c
+    graphics/raylib_glue.c
+    graphics/render_system.c
+    network/network.c
+    physics/gravity_system.c
+    physics/physics_system.c
 )
