@@ -30,9 +30,8 @@ bool register_system_update(system_update_fn_t system) {
   return false;
 }
 
-void systems_update() {
+void systems_update(game_logic *logic, float delta_time) {
   for (uint32_t i = 0; i < manager.no_system; ++i) {
-    manager.system[i]();
+    manager.system[i](logic, delta_time);
   }
-  event_default_broadcast();
 }

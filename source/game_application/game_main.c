@@ -9,6 +9,8 @@
 #endif
 
 #include <game_logic.h>
+#include <game_view.h>
+#include <human_view.h>
 #include <input_system.h>
 #include <raylib_glue.h>
 #include <signal.h>
@@ -44,7 +46,6 @@ void game_cleanup();
 static inline void register_interrupt_signal_handler();
 static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
-static void render_frame(float interpolation_factor);
 
 bool is_2d = false;
 
@@ -60,11 +61,17 @@ static struct {
 
 float TIMESTEP = 1.f / 60.f;
 
-int game_main() {
+int game_main(void (*user_game)(game_logic *logic)) {
   atexit(game_cleanup);
   register_interrupt_signal_handler();
 
   get_win32_frequency();
+
+  game_logic *logic = game_logic_create();
+  game_view *human_game_view = game_view_create(human_view);
+  // todo: implement netwoork view and ai view
+
+  user_game(logic);
 
 #ifndef NO_RAYLIB
   // Initialize window
@@ -88,7 +95,6 @@ int game_main() {
     double frame_time = compute_lapsed_time();
     time_elapsed += frame_time;
 
-// #define MAIN_EPSILON 1e-6
 #define MAX_ACCUMULATED_TIME 0.25  // Avoid spiral of death
     if (time_elapsed - MAX_ACCUMULATED_TIME > GREY_ZERO) {
       time_elapsed = MAX_ACCUMULATED_TIME;
@@ -96,20 +102,18 @@ int game_main() {
 
     // catch up on missed time
     while (time_elapsed >= TIMESTEP) {
-      update_input_system();
-      systems_update();
-#if defined(__ANDROID__) && !defined(NO_RAYLIB)
-      render_controller();
-#endif
+      update_input_system(logic);
+      game_logic_update(logic, TIMESTEP);
+
       time_elapsed -= TIMESTEP;
     }
 
     double interpolation_factor = time_elapsed / TIMESTEP;
-    // Render logs
-    // LOG("Rendering at frame_time = %fms, factor = %f.", frame_time * 1000,
-    //     interpolation_factor);
-    render_frame(interpolation_factor);
+    game_view_render(human_game_view, logic, (float)interpolation_factor);
   }
+
+  game_logic_destroy(logic);
+  game_view_destroy(human_game_view);
 
 #ifndef NO_RAYLIB
   close_window();
@@ -125,15 +129,6 @@ void set_game_screen_config(uint32_t screen_width, uint32_t screen_height, char 
   game_config.FPS = FPS;
 
   TIMESTEP = 1.f / FPS;
-}
-
-void render();
-
-static void render_frame(float interpolation_factor) {
-  if (interpolation_factor - 1 > GREY_ZERO) interpolation_factor = 1;
-  // render
-  interpolate_positions(interpolation_factor);
-  render();
 }
 
 #ifdef _WIN32

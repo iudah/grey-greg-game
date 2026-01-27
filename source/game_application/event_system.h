@@ -22,16 +22,12 @@ typedef struct {
 } event;
 
 typedef struct event_system event_system;
-typedef struct event_queue event_queue;
 typedef bool (*event_handler)(event *);
 
-extern event_queue *event__queue;
-extern event_system *event__system;
-
-void event_default_broadcast();
-event_system *get_default_event_default();
-void event_handler_broadcast(event_system *system, event_queue *queue);
-bool event_trigger(event_queue *q, void *info, int type);
+event_system *event_system_create(uint32_t initial_no_of_system);
+void event_system_destroy(event_system *system);
+void event_system_update(event_system *event_system);
+bool event_trigger(event_system *event_system, void *info, int type);
 void event_handler_register(event_system *system, event_handler handle);
 
 #endif

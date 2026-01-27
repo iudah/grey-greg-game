@@ -3,6 +3,6 @@
 
 #include "entity.h"
 
-void render_system_update();
+void render_scene(float interpolation_factor);
 
 #endif

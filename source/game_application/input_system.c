@@ -9,26 +9,23 @@
 #include <zot.h>
 
 #ifndef NO_RAYLIB
-typedef enum { PAD_A, PAD_X, PAD_B, PAD_O, PAD_COUNT } PadIndex;
-typedef enum { STICK_KNOB, STICK_BASE, STICK_COUNT } StickIndex;
+
+controller_config controller;
 
 static const int btn_h = 60;
 static const int btn_w = 50;
 static const int dir_w = 180;
 static const int margin = 20;
 
-Rectangle pad[PAD_COUNT];
-Circle stick[STICK_COUNT];
-
 void mark_pad_area(PadIndex i, Rectangle r) {
   if (i < PAD_COUNT) {
-    pad[i] = r;
+    controller.pad[i] = r;
   }
 }
 
 void mark_stick_area(StickIndex i, Circle c) {
   if (i < STICK_COUNT) {
-    stick[i] = c;
+    controller.stick[i] = c;
   }
 }
 
@@ -37,7 +34,7 @@ void mark_stick_area(StickIndex i, Circle c) {
 float stick_large_radius = 0;
 float action_btn_expansn = 0;
 
-static void raylib_soft_game_pad_layout(int sw, int sh) {
+static void recalculate_soft_game_pad_layout(int sw, int sh) {
   float center_x = sw * 0.85f;
   float center_y = sh * 0.70f;
 
@@ -60,33 +57,10 @@ static void raylib_soft_game_pad_layout(int sw, int sh) {
   mark_stick_area(STICK_KNOB, (Circle){dpad_x, dpad_y, b_size / 2});
 }
 
-void render_controller() {
-#ifndef NO_RAYLIB
-  int screen_width = get_screen_width();
-  int screen_height = get_screen_height();
-
-  if (screen_width <= 0 || screen_height <= 0) return;
-
-  static int last_screen_width = 0;
-
-  if (last_screen_width != screen_width) {
-    raylib_soft_game_pad_layout(screen_width, screen_height);
-    if (last_screen_width != 0) {
-      event_trigger(event__queue, NULL, SCREEN_SIZE_CHANGED_EVENT);
-#if defined(__ANDROID__)
-      event_trigger(event__queue, NULL, SCREEN_ORIENTATION_CHANGED_EVENT);
-#endif
-    }
-    last_screen_width = screen_width;
-  }
-
-  DrawRectangleRec(pad[PAD_A], BLUE);
-  DrawRectangleRec(pad[PAD_B], BLUE);
-  DrawRectangleRec(pad[PAD_O], BLUE);
-  DrawRectangleRec(pad[PAD_X], BLUE);
-  DrawCircleLines(stick[STICK_BASE].x, stick[STICK_BASE].y, stick[STICK_BASE].radius, BLUE);
-  DrawCircle(stick[STICK_KNOB].x, stick[STICK_KNOB].y, stick[STICK_KNOB].radius, Fade(BLUE, 0.4));
-#endif
+void on_screen_resize(event *e) {
+  if (e->type != SCREEN_ORIENTATION_CHANGED_EVENT) return;
+  uint32_t *screensize = e->info;
+  recalculate_soft_game_pad_layout(screensize[0], screensize[1]);
 }
 
 #ifndef NO_RAYLIB
@@ -115,7 +89,9 @@ Vector2 project_pt_x(Vector2 center, Vector2 pt, float radius) {
 #define SET_BIT(x, n)   (x |= (1 << (n)))
 #define CLEAR_BIT(x, n) (x &= ~(1 << (n)))
 
-void update_input_system() {
+void update_input_system(game_logic *logic) {
+  event_system *events_system = game_logic_get_event_system(logic);
+
 #ifndef NO_RAYLIB
 #if defined(__ANDROID__)
   int no_of_touch = GetTouchPointCount();
@@ -164,9 +140,9 @@ void update_input_system() {
 
   for (int i = 0; i < 4; ++i) {
     // Flood event while held (IsKeyDown)
-    if (IS_SET(current_trigger, i)) event_trigger(event__queue, (void *)&key[i], KEY_DOWN_EVENT);
+    if (IS_SET(current_trigger, i)) event_trigger(events_system, (void *)&key[i], KEY_DOWN_EVENT);
     if (!IS_SET(current_trigger, i) && IS_SET(previous_trigger, i))
-      event_trigger(event__queue, (void *)&key[i], KEY_RELEASED_EVENT);
+      event_trigger(events_system, (void *)&key[i], KEY_RELEASED_EVENT);
 
     // Edge trigger (IsKeyPressed)
     if (IS_SET(current_action, i) && !IS_SET(previous_action, i)) {
@@ -178,11 +154,11 @@ void update_input_system() {
 
     // Flood event while held (IsKeyDown)
     if (IS_SET(current_action, i)) {
-      event_trigger(event__queue, (void *)&pad_button[i], KEY_DOWN_EVENT);
+      event_trigger(events_system, (void *)&pad_button[i], KEY_DOWN_EVENT);
     }
 
     if (!IS_SET(current_action, i) && IS_SET(previous_action, i)) {
-      event_trigger(event__queue, (void *)&pad_button[i], KEY_RELEASED_EVENT);
+      event_trigger(events_system, (void *)&pad_button[i], KEY_RELEASED_EVENT);
       pad[i].height -= action_btn_expansn;
       pad[i].width -= action_btn_expansn;
       pad[i].x -= action_btn_expansn / 2;
@@ -201,7 +177,7 @@ void update_input_system() {
     for (uint32_t j = 0; j < sizeof(key) / sizeof(*key); ++j) {
       if (keyaction[i](key[j])) {
         LOG("                                          Keyboard triggered.");
-        event_trigger(event__queue, &key[j], eventaction[i]);
+        event_trigger(events_system, (void *)&key[j], eventaction[i]);
       }
     }
   }

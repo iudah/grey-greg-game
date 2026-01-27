@@ -134,9 +134,9 @@ void verlet_integration_method()
 }
 #endif
 
-void physics_system_update() {
+void physics_system_update(game_logic *logic, float delta_time) {
   euler_method();
-  compute_collisions();
+  compute_collisions(logic);
 }
 
 void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
@@ -178,17 +178,17 @@ bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
   return result[0] && result[1] && result[2];
 }
 
-void event_enqueue_collision(entity entity_i, entity entity_j) {
+void event_enqueue_collision(game_logic *logic, entity entity_i, entity entity_j) {
   collision_data *collision = zmalloc(sizeof(*collision));
 
   collision->a = entity_i;
   collision->b = entity_j;
 
-  event_trigger(event__queue, collision, COLLISION_EVENT);
+  event_trigger(game_logic_get_event_system(logic), collision, COLLISION_EVENT);
 }
 
-void resolve_collision(entity entity_i, entity entity_j) {
-  event_enqueue_collision(entity_i, entity_j);
+void resolve_collision(game_logic *logic, entity entity_i, entity entity_j) {
+  event_enqueue_collision(logic, entity_i, entity_j);
 
   // LOG("Collision between entity %d and %d", entity_i.id, entity_j.id);
 
@@ -345,7 +345,7 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
   return true;
 }
 
-void compute_collisions() {
+void compute_collisions(game_logic *logic) {
   float *radii = aabb_component->streams->radius;
   struct vec4_st *extents = aabb_component->streams->extent;
   struct vec4_st *physix_positions = position_component->stream->position;
@@ -386,7 +386,7 @@ void compute_collisions() {
                              &extents[aabb_j], &min_b, &max_b);
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
-        resolve_collision(entity_a, entity_b);
+        resolve_collision(logic, entity_a, entity_b);
       }
     }
   }

@@ -1,10 +1,10 @@
 #include <math.h>
+#include <physics_system.h>
 #include <string.h>
 #include <zot.h>
 
 #include "ai_component.h"
 #include "component.h"
-#include "physics_system.h"
 #include "simd.h"
 #include "systems_manager.h"
 
@@ -139,7 +139,7 @@ void ai_update_state(entity npc, entity player) {
   }
 }
 
-void ai_system_update() {
+void ai_system_update(game_logic *logic, float delta_time) {
   ai_state *states = ai_component->streams->state;
   float velocity[4];
   extern entity player;

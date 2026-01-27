@@ -1,6 +1,7 @@
 #include <aabb_component.h>
 #include <actor.h>
 #include <force_component.h>
+#include <game_logic.h>
 #include <game_main.h>
 #include <gravity_system.h>
 #include <inttypes.h>
@@ -130,17 +131,16 @@ bool player_movement(event *e) {
   return true;
 }
 
-void init_world() {
+void init_world(game_logic *logic) {
   LOG("%s", __FUNCTION__);
   set_game_screen_config(SCREEN_X, SCREEN_Y, "Grey Greg", 60);
 
   register_system_update((system_update_fn_t)gravity_system_update);
   register_system_update((system_update_fn_t)physics_system_update);
   register_system_update((system_update_fn_t)clear_forces);
-  register_system_update((system_update_fn_t)render_system_update);
 
-  event_handler_register(get_default_event_default(), walk_through_resolution);
-  event_handler_register(event__system, player_movement);
+  event_handler_register(game_logic_get_event_system(logic), walk_through_resolution);
+  event_handler_register(game_logic_get_event_system(logic), player_movement);
 
 #undef SCREEN_X
 #undef SCREEN_Y

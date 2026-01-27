@@ -1,5 +1,6 @@
 #include "render_system.h"
 
+#include <input_system.h>
 #include <inttypes.h>
 #include <math.h>
 #include <raylib_glue.h>
@@ -17,15 +18,6 @@
 #include "rotation_component.h"
 #include "scale_component.h"
 #include "velocity_component.h"
-
-void render_system_update() {
-  struct vec4_st *rot = rotation_component->streams->rotation;
-  struct vec4_st *scale = scale_component->streams->scale;
-
-  for (uint32_t i = 0; i < scale_component->set.count; ++i) {
-    // compute transform matrix
-  }
-}
 
 uint64_t count = 0;
 char *frame = 0;
@@ -85,10 +77,21 @@ void ppm_render() {
   }
 }
 
+void render_controller(controller_config *controller) {
+#ifndef NO_RAYLIB
+  Rectangle *pad = controller->pad;
+  Circle *stick = controller->stick;
+  DrawRectangleRec(pad[PAD_A], BLUE);
+  DrawRectangleRec(pad[PAD_B], BLUE);
+  DrawRectangleRec(pad[PAD_O], BLUE);
+  DrawRectangleRec(pad[PAD_X], BLUE);
+  DrawCircleLines(stick[STICK_BASE].x, stick[STICK_BASE].y, stick[STICK_BASE].radius, BLUE);
+  DrawCircle(stick[STICK_KNOB].x, stick[STICK_KNOB].y, stick[STICK_KNOB].radius, Fade(BLUE, 0.4));
+#endif
+}
+
 #ifndef NO_RAYLIB
 void raylib_render() {
-  BeginDrawing();
-  ClearBackground(RAYWHITE);
   for (uint32_t i = 0; i < render_component->set.count; ++i) {
     entity e = render_component->set.dense[i];
     uint32_t aabb_i;
@@ -108,10 +111,12 @@ void raylib_render() {
                                   render_component->streams->color[i].y,
                                   render_component->streams->color[i].z, 255});
   }
-  EndDrawing();
 }
 #endif
-void render() {
+
+void render_scene(float interpolation_factor) {
+  if (interpolation_factor - 1 > GREY_ZERO) interpolation_factor = 1;
+  interpolate_positions(interpolation_factor);
 #ifndef NO_RAYLIB
   raylib_render();
 #else

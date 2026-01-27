@@ -1,8 +1,5 @@
 #include "world.h"
 
-int game_main();
+int game_main(void *);
 
-int main() {
-  init_world();
-  game_main();
-}
+int main() { game_main(init_world); }

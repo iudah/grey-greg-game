@@ -1,10 +1,10 @@
 #ifndef RENDER_COMPONENT_COMPONENT_H
 #define RENDER_COMPONENT_COMPONENT_H
 
+#include <raylib_glue.h>
 #include <stdint.h>
 
 #include "component_base.h"
-#include "raylib_glue.h"
 
 #define SCREEN_X get_screen_width()
 #define SCREEN_Y get_screen_height()

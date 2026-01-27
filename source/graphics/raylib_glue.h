@@ -2,7 +2,7 @@
 #define RAYLIB_GLUE_H
 
 #ifndef NO_RAYLIB
-#ifndef HAS_WIN32_API
+#if !HAS_WIN32_API
 // Prevent collisons with Windows API
 #include <raylib.h>
 #endif
