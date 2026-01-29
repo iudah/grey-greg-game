@@ -7,6 +7,7 @@ set(SOURCE_FILES
     game_logic/components/component.c
     game_logic/components/component_manager.c
     game_logic/components/force_component.c
+    game_logic/components/grid_component.c
     game_logic/components/mass_component.c
     game_logic/components/position_component.c
     game_logic/components/render_component.c
@@ -31,4 +32,6 @@ set(SOURCE_FILES
     network/network.c
     physics/gravity_system.c
     physics/physics_system.c
+    game_logic/components/grid_component.c
+    game_logic/grid/wave_fn_collapse.c
 )

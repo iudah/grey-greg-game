@@ -6,7 +6,7 @@
 #define GREY_ZERO     (1e-5f)
 #define GREY_AABB_GAP (GREY_ZERO * 1e2f)
 
-#define INITIAL_CAPACITY (32)
+#define INITIAL_CAPACITY (8)
 
 typedef struct {
   uint32_t id : 24;

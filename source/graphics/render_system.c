@@ -13,6 +13,7 @@
 #include "aabb_component.h"
 #include "component.h"
 #include "entity.h"
+#include "grid_component.h"
 #include "position_component.h"
 #include "render_component.h"
 #include "rotation_component.h"
@@ -90,10 +91,25 @@ void render_controller(controller_config *controller) {
 #endif
 }
 
+void render_grid(grid *g) {
+  uint64_t grid_size[2];
+  grid_get_grid_size(g, grid_size);
+
+  // Draw Tiles or Make Map into a large texture to render in one call
+  for (uint64_t x = 0; x < grid_size[0]; ++x) {
+    for (uint64_t y = 0; y < grid_size[1]; ++y) {
+    }
+  }
+}
+
 #ifndef NO_RAYLIB
 void raylib_render() {
   for (uint32_t i = 0; i < render_component->set.count; ++i) {
     entity e = render_component->set.dense[i];
+    if (has_component(e, (struct generic_component *)grid_component)) {
+      render_grid(grid_component_get_grid(e));
+      continue;
+    }
     uint32_t aabb_i;
     if (!component_get_dense_id((struct generic_component *)aabb_component, e, &aabb_i)) continue;
 

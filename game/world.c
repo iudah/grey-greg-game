@@ -4,6 +4,8 @@
 #include <game_logic.h>
 #include <game_main.h>
 #include <gravity_system.h>
+#include <grid.h>
+#include <grid_component.h>
 #include <inttypes.h>
 #include <mass_component.h>
 #include <math.h>
@@ -141,6 +143,13 @@ void init_world(game_logic *logic) {
 
   event_handler_register(game_logic_get_event_system(logic), walk_through_resolution);
   event_handler_register(game_logic_get_event_system(logic), player_movement);
+
+  // A World (map) has multiple biomes (sub-map).
+  entity world_entity = create_entity();
+  attach_component(world_entity, grid_component);
+  attach_component(world_entity, render_component);
+  grid *game_map = grid_create(1024, 1024);
+  grid_component_set_grid(world_entity, game_map);
 
 #undef SCREEN_X
 #undef SCREEN_Y

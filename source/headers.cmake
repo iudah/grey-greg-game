@@ -9,6 +9,7 @@ set(HEADER_FILES
     game_logic/components/component_base.h
     game_logic/components/component_manager.h
     game_logic/components/force_component.h
+    game_logic/components/grid_component.h
     game_logic/components/mass_component.h
     game_logic/components/position_component.h
     game_logic/components/render_component.h
@@ -20,6 +21,7 @@ set(HEADER_FILES
     game_logic/entities/actor.h
     game_logic/entities/entity.h
     game_logic/game_logic.h
+    game_logic/grid/grid.h
     game_logic/process_manager.h
     game_logic/systems/systems_manager.h
     graphics/game_view.h
@@ -29,4 +31,6 @@ set(HEADER_FILES
     physics/arm_neon_ext_itunu.h
     physics/gravity_system.h
     physics/physics_system.h
+    game_logic/grid/grid.h
+    game_logic/grid/wave_fn_collapse.h
 )
