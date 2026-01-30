@@ -15,9 +15,11 @@
 #include <raylib_glue.h>
 #include <render_component.h>
 #include <render_system.h>
+#include <resource_manager.h>
 #include <stdint.h>
 #include <systems_manager.h>
 #include <velocity_component.h>
+#include <wave_fn_collapse.h>
 #include <waypoint_component.h>
 #include <zot.h>
 
@@ -67,7 +69,7 @@ struct {
   uint32_t cap;
 } world;
 
-bool world_append_sprite(entity e) {
+bool game_append_sprite(entity e) {
   if (!world.cap) {
     world.cap = 32;
     world.sprite = zmalloc(world.cap * sizeof(*world.sprite));
@@ -135,7 +137,6 @@ bool player_movement(event *e) {
 
 void init_world(game_logic *logic) {
   LOG("%s", __FUNCTION__);
-  set_game_screen_config(SCREEN_X, SCREEN_Y, "Grey Greg", 60);
 
   register_system_update((system_update_fn_t)gravity_system_update);
   register_system_update((system_update_fn_t)physics_system_update);
@@ -146,11 +147,43 @@ void init_world(game_logic *logic) {
 
   // A World (map) has multiple biomes (sub-map).
   entity world_entity = create_entity();
-  attach_component(world_entity, grid_component);
-  attach_component(world_entity, render_component);
+  game_append_sprite(world_entity);
+  attach_component(world_entity, (struct generic_component *)grid_component);
+  attach_component(world_entity, (struct generic_component *)render_component);
+
   grid *game_map = grid_create(1024, 1024);
   grid_component_set_grid(world_entity, game_map);
 
+  resource_manager *resc_mgr = game_logic_get_resource_manager(logic);
+
+  const int tile_size = 16;
+  uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tile_set.png");
+  SetTextureFilter(resource_get_texture(resc_mgr, world_tile_set), TEXTURE_FILTER_POINT);
+
+  uint32_t air_tile = 0;
+  uint32_t grass_tile = resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size);
+  uint32_t dirt_tile =
+      resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size, tile_size);
+  uint32_t rock_tile = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size, 1 * tile_size,
+                                          tile_size, tile_size);
+  uint32_t ice_tile = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size, 1 * tile_size,
+                                         tile_size, tile_size);
+  uint32_t ladder_tile = resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size,
+                                            tile_size, tile_size);
+
+  wfc_rules_set *wfc_rules = wfc_rules_create(10);
+
+  wfc_rule_add(wfc_rules, grass_tile, air_tile, grass_tile, dirt_tile, grass_tile, 1);
+  wfc_rule_add(wfc_rules, dirt_tile, air_tile, grass_tile, dirt_tile, grass_tile, 1);
+  wfc_rule_add(wfc_rules, dirt_tile, air_tile, air_tile, air_tile, air_tile, 1);
+  wfc_rule_add(wfc_rules, dirt_tile, dirt_tile, dirt_tile, dirt_tile, dirt_tile, 1);
+  wfc_rule_add(wfc_rules, rock_tile, rock_tile, rock_tile, rock_tile, rock_tile, 1);
+
+  // bake map
+  RenderTexture2D *game_map_cache = grid_bake(game_map, resc_mgr);
+  grid_set_grid_cache(game_map, game_map_cache);
+
+#if 0
 #undef SCREEN_X
 #undef SCREEN_Y
 
@@ -171,7 +204,7 @@ void init_world(game_logic *logic) {
       bool is_end = (x + SPRITE_W > SCREEN_X || y + SPRITE_H > SCREEN_Y);
 
       if (is_start || is_end) {
-        world_append_sprite(rock(x, y));
+        game_append_sprite(rock(x, y));
       }
     }
   }
@@ -221,22 +254,22 @@ void init_world(game_logic *logic) {
           current_mat = grass;
       }
 
-      world_append_sprite(current_mat(current_x, current_y));
+      game_append_sprite(current_mat(current_x, current_y));
 
       // Enemy spawning
       if (levels[i].enemies > 0) {
         if (j >= levels[i].length - levels[i].enemies) {
-          world_append_sprite(person(current_x, current_y - 40 - EPSILON * 4, 10, 0));
+          game_append_sprite(person(current_x, current_y - 40 - EPSILON * 4, 10, 0));
         }
       }
     }
   }
-
+#endif
   // Player
-  float p_x = levels[0].x + EPSILON * 4;
-  float p_y = levels[0].y - 40 - EPSILON * 4;
+  // float p_x = levels[0].x + EPSILON * 4;
+  // float p_y = levels[0].y - 40 - EPSILON * 4;
 
   // A slave's dream is not of freedom but of a slave to call his own
 
-  world_append_sprite(player = person(p_x, p_y, 10, 0));
+  // game_append_sprite(player = person(p_x, p_y, 10, 0));
 }

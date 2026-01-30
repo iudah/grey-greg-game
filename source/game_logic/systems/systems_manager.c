@@ -5,6 +5,8 @@
 #include "event_system.h"
 #include "game_logic.h"
 
+// todo: ues list
+
 #define MAX_SYSTEM 32
 
 typedef struct {

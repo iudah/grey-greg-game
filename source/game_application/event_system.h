@@ -3,8 +3,6 @@
 
 #include "entity.h"
 
-#warning Add new event types to event_type enum or use some int value
-
 #define MAX_EVENT 63555
 
 typedef enum {
@@ -13,7 +11,8 @@ typedef enum {
   KEY_DOWN_EVENT,
   KEY_RELEASED_EVENT,
   SCREEN_SIZE_CHANGED_EVENT,
-  SCREEN_ORIENTATION_CHANGED_EVENT
+  SCREEN_ORIENTATION_CHANGED_EVENT,
+  NUMBER_OF_EVENT_TYPE
 } event_type;
 
 typedef struct {

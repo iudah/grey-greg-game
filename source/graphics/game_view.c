@@ -11,6 +11,7 @@ struct game_view {
 
 game_view *game_view_create(game_view_class *class) {
   game_view *view = zmalloc(sizeof(*view));
+  view->class = class;
 
   class->create(&view->internal_data);
   return view;

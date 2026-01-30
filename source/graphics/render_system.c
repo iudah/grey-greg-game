@@ -91,25 +91,32 @@ void render_controller(controller_config *controller) {
 #endif
 }
 
-void render_grid(grid *g) {
-  uint64_t grid_size[2];
-  grid_get_grid_size(g, grid_size);
+void render_grid(game_logic *logic, grid *g) {
+  RenderTexture2D *cache = grid_get_grid_cache(g);
 
-  // Draw Tiles or Make Map into a large texture to render in one call
-  for (uint64_t x = 0; x < grid_size[0]; ++x) {
-    for (uint64_t y = 0; y < grid_size[1]; ++y) {
-    }
+  if (cache == NULL) {
+    cache = grid_bake(g, game_logic_get_resource_manager(logic));
+    grid_set_grid_cache(g, cache);
+  }
+
+  if (cache) {
+    Rectangle src = {0, 0, (float)grid_get_grid_cache(g)->texture.width,
+                     (float)-grid_get_grid_cache(g)->texture.height};
+    Rectangle dest = {0, 0, (float)get_screen_width(), (float)get_screen_height()};
+    DrawTexturePro(cache->texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
   }
 }
 
 #ifndef NO_RAYLIB
-void raylib_render() {
+void raylib_render(game_logic *logic) {
   for (uint32_t i = 0; i < render_component->set.count; ++i) {
     entity e = render_component->set.dense[i];
     if (has_component(e, (struct generic_component *)grid_component)) {
-      render_grid(grid_component_get_grid(e));
+      render_grid(logic, grid_component_get_grid(e));
       continue;
     }
+
+#if 0
     uint32_t aabb_i;
     if (!component_get_dense_id((struct generic_component *)aabb_component, e, &aabb_i)) continue;
 
@@ -126,15 +133,16 @@ void raylib_render() {
                   CLITERAL(Color){render_component->streams->color[i].x,
                                   render_component->streams->color[i].y,
                                   render_component->streams->color[i].z, 255});
+#endif
   }
 }
 #endif
 
-void render_scene(float interpolation_factor) {
+void render_scene(game_logic *logic, float interpolation_factor) {
   if (interpolation_factor - 1 > GREY_ZERO) interpolation_factor = 1;
   interpolate_positions(interpolation_factor);
 #ifndef NO_RAYLIB
-  raylib_render();
+  raylib_render(logic);
 #else
   // ppm_render();
 #endif

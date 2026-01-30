@@ -53,8 +53,8 @@ if(NOT TARGET memalloc::memalloc)
   message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
-    # SOURCE_DIR c:/Jay/memalloc
-    GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
+    SOURCE_DIR c:/Jay/memalloc
+    # GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
@@ -86,8 +86,8 @@ if(NOT TARGET zot::zot)
   message(STATUS "zot not found, adding as ExternalProject")
   ExternalProject_Add(
     zot
-    # SOURCE_DIR c:/Jay/zot
-    GIT_REPOSITORY "https://github.com/iudah/zot.git"
+    SOURCE_DIR c:/Jay/zot
+    # GIT_REPOSITORY "https://github.com/iudah/zot.git"
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
@@ -135,8 +135,8 @@ if(${BUILD_RAYLIB})
 
     ExternalProject_Add(
       raylib
-      # SOURCE_DIR c:/Jay/raylib
-      GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+      SOURCE_DIR c:/Jay/raylib
+      # GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
       GIT_SHALLOW TRUE
       GIT_CLONE_DEPTH 1
       INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
@@ -208,6 +208,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/graphics>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/physics>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
   $<INSTALL_INTERFACE:include>)
 

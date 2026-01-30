@@ -52,7 +52,7 @@ void human_view_render(struct human_view *view, game_logic *logic, float interpo
   BeginDrawing();
   ClearBackground(RAYWHITE);
 
-  render_scene(interpolation_factor);
+  render_scene(logic, interpolation_factor);
 
   // draw ui elements
 

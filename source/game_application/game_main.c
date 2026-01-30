@@ -71,13 +71,13 @@ int game_main(void (*user_game)(game_logic *logic)) {
   game_view *human_game_view = game_view_create(human_view);
   // todo: implement netwoork view and ai view
 
-  user_game(logic);
-
 #ifndef NO_RAYLIB
   // Initialize window
   init_window(game_config.screen_width, game_config.screen_height, game_config.title);
   set_FPS(game_config.FPS);
 #endif
+
+  user_game(logic);
 
   LOG("Game started.");
 

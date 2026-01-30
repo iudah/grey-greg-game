@@ -2,6 +2,7 @@
 #define GAME_LOGIC_H
 
 #include <event_system.h>
+#include <resource_manager.h>
 #include <stdbool.h>
 
 typedef struct game_logic game_logic;
@@ -17,5 +18,6 @@ game_logic *game_logic_create();
 void game_logic_update(game_logic *logic, float delta_time);
 void game_logic_destroy(game_logic *logic);
 event_system *game_logic_get_event_system(game_logic *logic);
+resource_manager *game_logic_get_resource_manager(game_logic *logic);
 
 #endif

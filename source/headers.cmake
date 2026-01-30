@@ -1,4 +1,5 @@
 set(HEADER_FILES
+    core/ilist.h
     core/simd.h
     game_application/event_system.h
     game_application/game_main.h
@@ -22,6 +23,7 @@ set(HEADER_FILES
     game_logic/entities/entity.h
     game_logic/game_logic.h
     game_logic/grid/grid.h
+    game_logic/grid/wave_fn_collapse.h
     game_logic/process_manager.h
     game_logic/systems/systems_manager.h
     graphics/game_view.h
@@ -31,6 +33,5 @@ set(HEADER_FILES
     physics/arm_neon_ext_itunu.h
     physics/gravity_system.h
     physics/physics_system.h
-    game_logic/grid/grid.h
-    game_logic/grid/wave_fn_collapse.h
+    resources/resource_manager.h
 )
