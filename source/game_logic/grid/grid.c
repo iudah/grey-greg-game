@@ -6,7 +6,6 @@
 struct grid_cell {
   int8_t y_offset;
   uint32_t tile_text_id;
-  bool solid;
 };
 
 struct grid {
@@ -77,3 +76,9 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
 
   return cache;
 }
+
+resc_tile_flag grid_cell_get_flag(grid_cell *cell, resource_manager *rm) {
+  return resource_get_tile_flag(rm, cell->tile_text_id);
+}
+
+void grid_cell_set_tile_id(grid_cell *cell, uint64_t tile_id) { cell->tile_text_id = tile_id; }

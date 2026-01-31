@@ -7,6 +7,7 @@
 struct tile {
   Rectangle src_rect;
   uint32_t texture_id;
+  resc_tile_flag flag;
 };
 
 struct resource_manager {
@@ -30,11 +31,11 @@ Texture2D resource_get_texture(resource_manager *mgr, uint32_t texture_id) {
 }
 
 uint32_t resource_make_tile(resource_manager *mgr, uint32_t texture_id, uint32_t x, uint32_t y,
-                            uint32_t tile_width, uint32_t tile_height) {
+                            uint32_t tile_width, uint32_t tile_height, resc_tile_flag flag) {
   if (!mgr->tiles) {
     mgr->tiles = ilist_create(sizeof(struct tile));
   }
-  struct tile tile = {.src_rect = {x, y, tile_width, tile_height}, .texture_id = texture_id};
+  struct tile tile = {.src_rect = {x, y, tile_width, tile_height}, .texture_id = texture_id, flag};
 
   return ilist_append(mgr->tiles, &tile) - 1;
 }
@@ -43,7 +44,7 @@ Rectangle *resource_get_tile_rect(resource_manager *mgr, uint32_t tile_id) {
   struct tile *tile = ilist_get(mgr->tiles, tile_id);
 
   if (!tile) return NULL;
-  return &tile->src_rect;
+  return tile->src_rect.width && tile->src_rect.height ? &tile->src_rect : NULL;
 }
 
 Texture2D *resource_get_tile_texture(resource_manager *mgr, uint32_t tile_id) {
@@ -51,4 +52,8 @@ Texture2D *resource_get_tile_texture(resource_manager *mgr, uint32_t tile_id) {
 
   if (!tile) return NULL;
   return ilist_get(mgr->textures, tile->texture_id);
+}
+
+resc_tile_flag resource_get_tile_flag(resource_manager *mgr, uint32_t tile_id) {
+  return ((struct tile *)ilist_get(mgr->tiles, tile_id))->flag;
 }

@@ -20,6 +20,11 @@ ilist *ilist_create(size_t unit_size) {
   return list;
 }
 
+void ilist_destroy(ilist *list) {
+  zfree(list->ptr);
+  zfree(list);
+}
+
 uint32_t ilist_append(ilist *list, void *object) {
   if (list->count == list->capacity) {
     uint32_t capacity = list->capacity * 2;

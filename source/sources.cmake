@@ -1,5 +1,7 @@
 set(SOURCE_FILES
     core/ilist.c
+    core/irand.c
+    core/istack.c
     game_application/event_system.c
     game_application/game_main.c
     game_application/input_system.c

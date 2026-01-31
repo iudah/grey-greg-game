@@ -1,5 +1,7 @@
 set(HEADER_FILES
     core/ilist.h
+    core/irand.h
+    core/istack.h
     core/simd.h
     game_application/event_system.h
     game_application/game_main.h

@@ -102,7 +102,8 @@ void render_grid(game_logic *logic, grid *g) {
   if (cache) {
     Rectangle src = {0, 0, (float)grid_get_grid_cache(g)->texture.width,
                      (float)-grid_get_grid_cache(g)->texture.height};
-    Rectangle dest = {0, 0, (float)get_screen_width(), (float)get_screen_height()};
+    Rectangle dest = {0, 0, (float)grid_get_grid_cache(g)->texture.width,
+                      (float)grid_get_grid_cache(g)->texture.height};
     DrawTexturePro(cache->texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
   }
 }

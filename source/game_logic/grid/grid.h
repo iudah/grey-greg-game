@@ -15,5 +15,7 @@ void grid_get_grid_size(grid *g, uint64_t size[2]);
 void grid_set_grid_cache(grid *g, RenderTexture2D *cache);
 RenderTexture2D *grid_get_grid_cache(grid *g);
 RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr);
+void grid_cell_set_solid(grid_cell *cell, bool is_solid);
+void grid_cell_set_tile_id(grid_cell *cell, uint64_t tile_id);
 
 #endif
