@@ -23,7 +23,8 @@ resource_manager *resource_manager_create() {
 
 uint32_t resource_load_texture(resource_manager *mgr, const char *fpath) {
   Texture2D texture = LoadTexture(fpath);
-  return ilist_append(mgr->textures, &texture) - 1;
+  ilist_append(mgr->textures, &texture);
+  return ilist_count(mgr->textures) - 1;
 }
 
 Texture2D resource_get_texture(resource_manager *mgr, uint32_t texture_id) {
@@ -37,7 +38,9 @@ uint32_t resource_make_tile(resource_manager *mgr, uint32_t texture_id, uint32_t
   }
   struct tile tile = {.src_rect = {x, y, tile_width, tile_height}, .texture_id = texture_id, flag};
 
-  return ilist_append(mgr->tiles, &tile) - 1;
+  ilist_append(mgr->tiles, &tile);
+
+  return ilist_count(mgr->tiles) - 1;
 }
 
 Rectangle *resource_get_tile_rect(resource_manager *mgr, uint32_t tile_id) {

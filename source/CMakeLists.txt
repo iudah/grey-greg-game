@@ -53,8 +53,8 @@ if(NOT TARGET memalloc::memalloc)
   message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
-    SOURCE_DIR c:/Jay/memalloc
-    # GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
+    # SOURCE_DIR c:/Jay/memalloc
+    GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
     GIT_TAG origin/master
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
@@ -86,8 +86,8 @@ if(NOT TARGET zot::zot)
   message(STATUS "zot not found, adding as ExternalProject")
   ExternalProject_Add(
     zot
-    SOURCE_DIR c:/Jay/zot
-    # GIT_REPOSITORY "https://github.com/iudah/zot.git"
+    # SOURCE_DIR c:/Jay/zot
+    GIT_REPOSITORY "https://github.com/iudah/zot.git"
     GIT_TAG origin/main
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
@@ -113,6 +113,34 @@ set_target_properties(
   "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include")
 
+set(PCG_INSTALL_DIR "${CMAKE_BINARY_DIR}/pcg")
+set(PCG_INCLUDE_DIR "${PCG_INSTALL_DIR}/include")
+set(PCG_LIB_DIR "${PCG_INSTALL_DIR}/lib")
+set(PCG_STATIC_LIB "${PCG_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pcg_random${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+if(NOT TARGET pcg_external)
+  ExternalProject_Add(
+    pcg_external
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/"
+    PREFIX "${PCG_INSTALL_DIR}"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND make -C <SOURCE_DIR>/src CC=${CMAKE_C_COMPILER}
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_INCLUDE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_LIB_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "<SOURCE_DIR>/include" "${PCG_INCLUDE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy "<SOURCE_DIR>/src/libpcg_random.a" "${PCG_STATIC_LIB}"
+    BUILD_BYPRODUCTS "${PCG_STATIC_LIB}"
+  )
+endif()
+
+add_library(pcg_imported STATIC IMPORTED GLOBAL)
+set_target_properties(pcg_imported PROPERTIES
+  IMPORTED_LOCATION "${PCG_STATIC_LIB}"
+  INTERFACE_INCLUDE_DIRECTORIES "${PCG_INCLUDE_DIR}"
+)
+add_dependencies(pcg_imported pcg_external)
+add_library(pcg::pcg ALIAS pcg_imported)
+
 if(${BUILD_RAYLIB})
   find_package(raylib QUIET)
   add_library(raylib_imported STATIC IMPORTED)
@@ -135,8 +163,8 @@ if(${BUILD_RAYLIB})
 
     ExternalProject_Add(
       raylib
-      SOURCE_DIR c:/Jay/raylib
-      # GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+      # SOURCE_DIR c:/Jay/raylib
+      GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
       GIT_SHALLOW TRUE
       GIT_CLONE_DEPTH 1
       INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
@@ -195,7 +223,7 @@ else()
   add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
 endif()
 add_library(grey::${TARGET} ALIAS ${TARGET})
-
+target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/extras/entropy.c)
 target_include_directories(
   ${TARGET}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
@@ -210,10 +238,13 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/physics>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/extras>
   $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PUBLIC Threads::Threads)
+target_link_libraries(${TARGET} PUBLIC pcg::pcg)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 

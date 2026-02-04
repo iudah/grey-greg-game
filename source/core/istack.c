@@ -6,13 +6,20 @@
 
 struct istack {
   ilist *list;
-  uint32_t top;
 };
+
+bool ilist_pop(ilist *list, void *item);
 
 istack *istack_create(size_t unit_size) {
   istack *stack = zmalloc(sizeof(*stack));
+  if (!stack) return NULL;
+
   stack->list = ilist_create(unit_size);
-  stack->top = 0;
+  if (!stack->list) {
+    zfree(stack);
+    return NULL;
+  }
+
   return stack;
 }
 
@@ -21,13 +28,10 @@ void istack_destroy(istack *stack) {
   zfree(stack);
 }
 
-uint32_t istack_push(istack *stack, void *object) {
-  stack->top = ilist_append(stack->list, object);
-  return stack->top - 1;
+bool istack_push(istack *stack, void *object) {
+  if (!ilist_append(stack->list, object)) return false;
+
+  return true;
 }
 
-void *istack_pop(istack *stack) {
-  if (!stack->top) return NULL;
-
-  return ilist_get(stack->list, --stack->top);
-}
+bool istack_pop(istack *stack, void *item) { return ilist_pop(stack->list, item); }

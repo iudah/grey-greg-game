@@ -151,7 +151,7 @@ void init_world(game_logic *logic) {
   attach_component(world_entity, (struct generic_component *)grid_component);
   attach_component(world_entity, (struct generic_component *)render_component);
 
-  grid *game_map = grid_create(24, 24);
+  grid *game_map = grid_create(45, 24);
   grid_component_set_grid(world_entity, game_map);
 
   resource_manager *resc_mgr = game_logic_get_resource_manager(logic);
@@ -160,28 +160,50 @@ void init_world(game_logic *logic) {
   uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tile_set.png");
   SetTextureFilter(resource_get_texture(resc_mgr, world_tile_set), TEXTURE_FILTER_POINT);
 
-  uint32_t air_tile = resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, TILE_NO_FLAG);
-  uint32_t grass_tile =
+  uint32_t A, G, D, R, I, L;
+
+  uint32_t air_tile = A = resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, TILE_NO_FLAG);
+  uint32_t grass_tile = G =
       resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size, TILE_SOLID);
-  uint32_t dirt_tile = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size,
-                                          tile_size, TILE_SOLID);
-  uint32_t rock_tile = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size, 1 * tile_size,
-                                          tile_size, tile_size, TILE_SOLID);
-  uint32_t ice_tile = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size, 1 * tile_size,
-                                         tile_size, tile_size, TILE_SOLID);
-  uint32_t ladder_tile = resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size,
-                                            tile_size, tile_size, TILE_CLIMBABLE);
+  uint32_t dirt_tile = D = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size,
+                                              tile_size, TILE_SOLID);
+  // uint32_t rock_tile = R = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size,
+  //                                             1 * tile_size, tile_size, tile_size, TILE_SOLID);
+  // uint32_t ice_tile = I = resource_make_tile(resc_mgr, world_tile_set, 6 * tile_size, 1 *
+  // tile_size,
+  //                                            tile_size, tile_size, TILE_SOLID);
+  // uint32_t ladder_tile = L = resource_make_tile(
+  //     resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size, tile_size, tile_size,
+  //     TILE_CLIMBABLE);
 
-  wfc_rules_set *wfc_rules = wfc_rules_create(10);
+#if 0
+  uint32_t sample_world[][20] = {{A, A, A, A, A, A, G, G, L, G, A, A, A, A, A, A, A, A},
+                                 {A, A, A, A, G, G, D, D, L, R, A, A, A, A, A, A, A, A},
+                                 {A, A, A, A, A, R, R, R, L, A, A, A, A, G, L, A, A, A},
+                                 {A, A, G, G, A, A, A, A, L, A, A, A, R, D, L, R, R, A},
+                                 {G, G, D, D, A, A, A, A, L, A, A, D, D, R, L, D, A, A},
+                                 {D, D, D, D, G, A, A, A, L, G, G, A, A, R, L, A, A, A},
+                                 {R, D, D, D, D, G, A, A, L, D, R, A, A, G, L, A, A, A},
+                                 {R, R, R, D, D, R, A, G, L, D, R, A, A, R, R, D, A, A},
+                                 {R, R, R, D, D, R, A, D, L, D, R, A, D, R, R, R, R, D}};
 
-  wfc_rule_add(wfc_rules, grass_tile, air_tile, grass_tile, dirt_tile, grass_tile, 200);
-  wfc_rule_add(wfc_rules, dirt_tile, air_tile, grass_tile, dirt_tile, grass_tile, 200);
-  wfc_rule_add(wfc_rules, air_tile, air_tile, air_tile, air_tile, air_tile, 200);
-  wfc_rule_add(wfc_rules, dirt_tile, air_tile, air_tile, air_tile, air_tile, 200);
-  wfc_rule_add(wfc_rules, dirt_tile, dirt_tile, dirt_tile, dirt_tile, dirt_tile, 200);
-  wfc_rule_add(wfc_rules, rock_tile, rock_tile, rock_tile, rock_tile, rock_tile, 100);
+  wfc_rules_set *wfc_rules = wfc_rules_from_sample(sample_world, A, 20, 9);
+#endif
 
-  wave_fn_collapse(game_map, wfc_rules);
+  wfc_atlas *wfc_rules = wfc_atlas_create(3);
+
+  wfc_atlas_add_rule(wfc_rules, air_tile, air_tile, air_tile, air_tile, air_tile);
+  wfc_atlas_add_rule(wfc_rules, grass_tile, air_tile, air_tile, air_tile, air_tile);
+  wfc_atlas_add_rule(wfc_rules, grass_tile, air_tile, grass_tile, dirt_tile, grass_tile);
+  wfc_atlas_add_rule(wfc_rules, dirt_tile, grass_tile, dirt_tile, dirt_tile, dirt_tile);
+  wfc_atlas_add_rule(wfc_rules, dirt_tile, dirt_tile, dirt_tile, dirt_tile, dirt_tile);
+  wfc_atlas_add_rule(wfc_rules, dirt_tile, air_tile, air_tile, air_tile, air_tile);
+
+  wfc_atlas_compile(wfc_rules);
+
+  if (!wfc_run_collapse(game_map, wfc_rules)) {
+    LOG_ERROR("Critical WFC failure.");
+  }
 
   // bake map
   RenderTexture2D *game_map_cache = grid_bake(game_map, resc_mgr);
