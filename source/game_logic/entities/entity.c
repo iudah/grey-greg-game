@@ -3,16 +3,16 @@
 #include <stdint.h>
 #include <zot.h>
 
-#define MASK_SIZE ((MAX_NO_ENTITY + 31) / 32)
+#define MASK_SIZE (required_uint64s(MAX_NO_ENTITY))
 
 typedef struct {
   uint8_t generation;
   bool active;
 } entity_record;
 
-entity_record* entity_registry = NULL;
+entity_record *entity_registry = NULL;
 
-uint32_t* free_entities = NULL;
+uint32_t *free_entities = NULL;
 uint32_t number_of_free_entities = 0;
 uint32_t capacity_of_free_entities = INITIAL_CAPACITY;
 
@@ -35,8 +35,7 @@ entity create_entity() {
   }
 
   if (!entity_registry) {
-    entity_registry =
-        zcalloc(capacity_of_active_entities, sizeof(*entity_registry));
+    entity_registry = zcalloc(capacity_of_active_entities, sizeof(*entity_registry));
   }
   if (number_of_active_entities >= capacity_of_active_entities) {
     auto cap = capacity_of_active_entities * 2;

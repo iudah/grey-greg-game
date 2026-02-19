@@ -24,6 +24,7 @@ set(HEADER_FILES
     game_logic/entities/actor.h
     game_logic/entities/entity.h
     game_logic/game_logic.h
+    game_logic/grid/dfs_maze.h
     game_logic/grid/grid.h
     game_logic/grid/wave_fn_collapse.h
     game_logic/process_manager.h

@@ -53,7 +53,7 @@ void deinitialize_event_queue(event_queue *queue) { zfree(queue->queue); }
 
 event_system *event_system_create(uint32_t initial_no_of_system) {
   event_system *system = zmalloc(sizeof(*system));
-  if (!initial_no_of_system) initial_no_of_system = 1;
+  if (!initial_no_of_system) initial_no_of_system = MAX_EVENT_HANDLER;
   system->event_handler = zcalloc(initial_no_of_system, sizeof(*system->event_handler));
   system->no_event_handler = 0;
   system->avail_no_event_handler = initial_no_of_system;
@@ -104,6 +104,7 @@ void event_handler_register(event_system *system, event_handler handle) {
     return;
   }
   if (system->no_event_handler >= MAX_EVENT_HANDLER) {
+    // todo: reallocate
     LOG_ERROR("Maximum number of event handler reached for this broadcaster.");
     return;
   }
@@ -122,7 +123,7 @@ bool event_enqueue(event_queue *q, event *e) {
 }
 
 // triggers may occur on multiple threads
-bool event_trigger(event_system *event_system, void *info, int type) {
+bool event_trigger(event_system *event_system, void *info, const event_type type) {
   event *e = zmalloc(sizeof((*e)));
 
   e->info = info;
@@ -134,7 +135,7 @@ bool event_trigger(event_system *event_system, void *info, int type) {
 void event_system_update(event_system *event_system) {
   char active_idx = event_system->active_idx;
 
-  event_system->active_idx ^= active_idx;
+  event_system->active_idx ^= 1;
 
   event_queue *queue_to_process = &event_system->queues[active_idx];
 

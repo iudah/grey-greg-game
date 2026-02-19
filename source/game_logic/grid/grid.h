@@ -8,7 +8,11 @@
 typedef struct grid grid;
 typedef struct grid_cell grid_cell;
 
-grid *grid_create(uint64_t width, uint64_t height);
+struct grid_coord {
+  uint32_t x, y;
+};
+
+grid *grid_create(uint64_t width, uint64_t height, uint64_t cell_width, uint64_t cell_height);
 void grid_destroy(grid *g);
 grid_cell *grid_get_cell(grid *g, uint64_t x, uint64_t y);
 void grid_get_grid_size(grid *g, uint64_t size[2]);

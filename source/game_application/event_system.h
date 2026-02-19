@@ -26,7 +26,7 @@ typedef bool (*event_handler)(event *);
 event_system *event_system_create(uint32_t initial_no_of_system);
 void event_system_destroy(event_system *system);
 void event_system_update(event_system *event_system);
-bool event_trigger(event_system *event_system, void *info, int type);
+bool event_trigger(event_system *event_system, void *info, const event_type type);
 void event_handler_register(event_system *system, event_handler handle);
 
 #endif

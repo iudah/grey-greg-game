@@ -7,8 +7,9 @@ typedef struct resource_manager resource_manager;
 typedef enum {
   TILE_NO_FLAG = 0,
   TILE_SOLID = 1 << 0,
-  TILE_CLIMBABLE = 1 << 1,
-  TILE_HAZARD = 1 << 2
+  TILE_WALKABLE = 1 << 1,
+  TILE_HAZARD = 1 << 2,
+  TILE_CLIMBABLE = 1 << 3
 } resc_tile_flag;
 
 #if !HAS_WIN32_API

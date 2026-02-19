@@ -9,10 +9,10 @@
 
 #include "entity.h"
 
-#define MASK_SIZE ((MAX_NO_ENTITY + 31) / 32)
+#define MASK_SIZE ((MAX_NO_ENTITY + 63) / 64)
 
-#define SET_BIT(mask, id)   ((mask)[(id) / 32] |= (UINT32_C(1) << ((id) % 32)))
-#define CLEAR_BIT(mask, id) ((mask)[(id) / 32] &= ~(UINT32_C(1) << ((id) % 32)))
+// #define SET_BIT(mask, id)   ((mask)[(id) / 32] |= (UINT32_C(1) << ((id) % 32)))
+// #define CLEAR_BIT(mask, id) ((mask)[(id) / 32] &= ~(UINT32_C(1) << ((id) % 32)))
 
 struct {
   component_set set;
@@ -63,7 +63,7 @@ bool initialize_component(struct generic_component *component, uint64_t *compone
   component->set.no_of_stream = no_of_stream;
 
   component->set.mask =
-      zcalloc((component->set.sparse_capacity + 31) / 32, sizeof(*component->set.mask));
+      zcalloc(required_uint64s(component->set.sparse_capacity), sizeof(*component->set.mask));
 
   component->streams = zmalloc(no_of_stream * sizeof(void *));
 
@@ -97,14 +97,18 @@ bool fit_sparse_capacity(struct generic_component *component, entity e) {
                           sizeof(*component->set.sparse), e.id);
 
   if (fit && capacity != component->set.sparse_capacity) {
-    auto tmp = zrealloc(component->set.mask, ((component->set.sparse_capacity + 31) / 32) *
+    auto tmp = zrealloc(component->set.mask, required_uint64s(component->set.sparse_capacity) *
                                                  sizeof(*component->set.mask));
     if (!tmp) return false;
     component->set.mask = tmp;
 
-    memset((void *)((uintptr_t)tmp + ((capacity + 31) / 32) * sizeof(*component->set.mask)), 0,
-           (((component->set.sparse_capacity + 31) / 32) - ((capacity + 31) / 32)) *
-               sizeof(*component->set.mask));
+    void *dest =
+        (void *)((uintptr_t)tmp + required_uint64s(capacity) * sizeof(*component->set.mask));
+    size_t length =
+        (required_uint64s(component->set.sparse_capacity) - required_uint64s(capacity)) *
+        sizeof(*component->set.mask);
+
+    memset(dest, 0, length);
   }
 
   return fit;

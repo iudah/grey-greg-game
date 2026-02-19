@@ -276,8 +276,8 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
   // Early exit if no relative movement
   uint32x4_t rel_motion_mask = vcltq_f32(vabsq_f32(ds), vdupq_n_f32(GREY_ZERO));
 
-  if (vgetq_lane_u32(rel_motion_mask, 0) == 0 && vgetq_lane_u32(rel_motion_mask, 1) == 0 &&
-      (!is_2d && vgetq_lane_u32(rel_motion_mask, 2) == 0))
+  if (vgetq_lane_u32(rel_motion_mask, 0) != 0 && vgetq_lane_u32(rel_motion_mask, 1) != 0 &&
+      (is_2d || vgetq_lane_u32(rel_motion_mask, 2) != 0))
     return false;
 
   float32x4_t extent_sum = vaddq_f32(vld1q_f32((float *)extents_a), vld1q_f32((float *)extents_b));
@@ -293,36 +293,29 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
   // ray dir
   float32x4_t dir = vsubq_f32(vsubq_f32(pb1, pb0), vsubq_f32(pa1, pa0));
 
+  float pb0_arr[4];
   float dir_arr[4];
+  float left_arr[4];
+  float right_arr[4];
   vst1q_f32(dir_arr, dir);
+  vst1q_f32(left_arr, left);
+  vst1q_f32(right_arr, right);
+  vst1q_f32(pb0_arr, pb0);
 
-#define CHECK_AXIS_ALIGNMENT(i)                                                                \
-  do {                                                                                         \
-    if (fabsf(dir_arr[i]) > GREY_ZERO)                                                         \
-      dir_arr[i] = 1.f / dir_arr[i];                                                           \
-    else {                                                                                     \
-      if (pb0[i] < vgetq_lane_f32(left, i) || pb0[i] > vgetq_lane_f32(right, i)) return false; \
-      dir_arr[i] = (dir_arr[i] < 0) ? -INFINITY : INFINITY;                                    \
-    }                                                                                          \
-  } while (false)
+  float tmin_s[4] = {-INFINITY, -INFINITY, -INFINITY, 0};
+  float tmax_s[4] = {INFINITY, INFINITY, INFINITY, 0};
 
-  CHECK_AXIS_ALIGNMENT(0);
-  CHECK_AXIS_ALIGNMENT(1);
-  CHECK_AXIS_ALIGNMENT(2);
-  dir_arr[3] = 0;
-#undef CHECK_AXIS_ALIGNMENT
-
-  float32x4_t inv_dir = vld1q_f32(dir_arr);
-
-  float32x4_t t0 = vmulq_f32(vsubq_f32(left, pb0), inv_dir);
-  float32x4_t t1 = vmulq_f32(vsubq_f32(right, pb0), inv_dir);
-
-  float32x4_t tmin = vminq_f32(t0, t1);
-  float32x4_t tmax = vmaxq_f32(t0, t1);
-
-  float tmin_s[4], tmax_s[4];
-  vst1q_f32(tmin_s, tmin);
-  vst1q_f32(tmax_s, tmax);
+  for (uint8_t i = 0; i < (is_2d ? 2 : 3); ++i) {
+    if (fabsf(dir_arr[i]) < GREY_ZERO) {
+      if (pb0_arr[i] < left_arr[i] || pb0_arr[i] > right_arr[i]) return false;
+    } else {
+      float inv = 1.0f / dir_arr[i];
+      float t0 = (left_arr[i] - pb0_arr[i]) * inv;
+      float t1 = (right_arr[i] - pb0_arr[i]) * inv;
+      tmin_s[i] = fminf(t0, t1);
+      tmax_s[i] = fmaxf(t0, t1);
+    }
+  }
 
   float t_enter = -INFINITY;
   int axis = 0;
@@ -336,7 +329,9 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
   float t_exit = fminf(tmax_s[0], tmax_s[1]);
   if (!is_2d) t_exit = fminf(t_exit, tmax_s[2]);
 
-  if (t_enter > t_exit || t_enter < 0.0f || t_enter > 1.0f) return false;
+  if (t_enter > t_exit || t_exit < 0.0f || t_enter > 1.0f) return false;
+
+  if (t_enter < 0.0f) t_enter = 0.0f;
 
   if (factor) *factor = t_enter;
 
@@ -374,8 +369,8 @@ void compute_collisions(game_logic *logic) {
         continue;
 
       if (!radii_collide(physix_previous_positions + pos_i, physix_positions + pos_i,
-                         physix_previous_positions + pos_j, physix_positions + pos_j, radii[pos_i],
-                         radii[pos_j]))
+                         physix_previous_positions + pos_j, physix_positions + pos_j, radii[aabb_i],
+                         radii[aabb_j]))
         continue;
 
       float32x4_t min_b;

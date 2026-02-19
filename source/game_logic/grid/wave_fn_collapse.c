@@ -1,22 +1,25 @@
 #include "wave_fn_collapse.h"
 
-
+#include <aabb_component.h>
+#include <actor.h>
+#include <component.h>
 #include <inttypes.h>
 #include <irand.h>
 #include <istack.h>
 #include <math.h>
+#include <position_component.h>
+#include <raylib_glue.h>
+#include <render_component.h>
+#include <resource_manager.h>
 #include <stdint.h>
 #include <string.h>
 #include <zot.h>
 
+#include "dfs_maze.h"
 #include "grid.h"
 
 typedef uint32_t wfc_key;
 typedef struct wfc_registry wfc_lookup;
-
-struct coord {
-  uint32_t x, y;
-};
 
 struct wfc_registry {
   wfc_key *keys;
@@ -34,20 +37,7 @@ struct wfc_atlas {
 struct wfc_slot {
   uint64_t *possibilities;  // bit-masked
   uint32_t entropy;
-#ifdef WFC_SHANNON_ENTROPY
-  float sum_weights;
-  float sum_wlogw;
-#endif
 };
-
-struct wfc_state {
-  struct wfc_slot *cell;
-  // uint64_t *collapsed;  // bit-masked
-};
-
-#define GET_BIT(mask, id)   ((mask)[(id) / 64] & (UINT64_C(1) << ((id) % 64)))
-#define SET_BIT(mask, id)   ((mask)[(id) / 64] |= (UINT64_C(1) << ((id) % 64)))
-#define CLEAR_BIT(mask, id) ((mask)[(id) / 64] &= ~(UINT64_C(1) << ((id) % 64)))
 
 static wfc_direction opposite[] = {[NORTH] = SOUTH, [EAST] = WEST, [SOUTH] = NORTH, [WEST] = EAST};
 
@@ -63,7 +53,6 @@ wfc_lookup *wfc_lookup_create() {
     zfree(list);
     return NULL;
   }
-
   return list;
 }
 
@@ -220,8 +209,6 @@ void wfc_atlas_set_tile_weight(wfc_atlas *atlas, uint32_t tile_id, uint8_t weigh
   }
 }
 
-static inline uint32_t required_uint64s(uint32_t count) { return (count + 63) / 64; }
-
 void wfc_atlas_compile(wfc_atlas *atlas) {
   uint32_t words = required_uint64s(atlas->tile_count);
   atlas->mask_cache = zcalloc(atlas->tile_count * 4 * words, sizeof(uint64_t));
@@ -260,6 +247,22 @@ void wfc_slot_set_rule(struct wfc_state *grid, uint32_t cell_idx, uint32_t rule_
   }
 }
 
+void make_cell_solid(struct wfc_state *state, wfc_atlas *atlas, resource_manager *mgr,
+                     uint32_t width, uint32_t height, struct grid_coord origin) {
+  for (uint32_t idx = 0; idx < atlas->tile_count; ++idx) {
+    wfc_slot_set_rule(state, origin.y * width + origin.x, idx,
+                      (resource_get_tile_flag(mgr, idx) & TILE_SOLID) != 0);
+  }
+}
+
+void make_cell_empty(struct wfc_state *state, wfc_atlas *atlas, resource_manager *mgr,
+                     uint32_t width, uint32_t height, struct grid_coord origin) {
+  for (uint32_t idx = 0; idx < atlas->tile_count; ++idx) {
+    wfc_slot_set_rule(state, origin.y * width + origin.x, idx,
+                      (resource_get_tile_flag(mgr, idx) & TILE_WALKABLE) != 0);
+  }
+}
+
 void wfc_slot_collapse(struct wfc_state *grid, uint32_t cell_idx, uint32_t chosen,
                        uint32_t tile_count) {
   struct wfc_slot *cell = &grid->cell[cell_idx];
@@ -277,25 +280,13 @@ struct wfc_state *wfc_state_create(uint32_t w, uint32_t h, uint32_t n_tile, wfc_
   grid->cell = zmalloc(sizeof(*grid->cell) * grid_size);
   uint32_t options_mask_words = required_uint64s(n_tile);
 
-#ifdef WFC_SHANNON_ENTROPY
-  float total_sum_w = 0, total_sum_wlogw = 0;
-  for (uint32_t t = 0; t < n_tile; t++) {
-    float w = (float)atlas->weight[t];
-    total_sum_w += w;
-    total_sum_wlogw += (w * logf(w));
-  }
-#endif
-
   for (uint32_t i = 0; i < grid_size; ++i) {
     struct wfc_slot *cell = &grid->cell[i];
     cell->entropy = n_tile;
-    cell->possibilities = zmalloc(options_mask_words * sizeof(*cell->possibilities));
-    memset(cell->possibilities, 0xff, options_mask_words * sizeof(*cell->possibilities));
-
-#ifdef WFC_SHANNON_ENTROPY
-    cell->sum_weights = total_sum_w;
-    cell->sum_wlogw = total_sum_wlogw;
-#endif
+    cell->possibilities = zcalloc(options_mask_words, sizeof(*cell->possibilities));
+    for (uint32_t t = 0; t < n_tile; ++t) {
+      SET_BIT(cell->possibilities, t);
+    }
   }
 
   return grid;
@@ -311,12 +302,8 @@ void wave_destroy(struct wfc_state *grid, uint64_t grid_size) {
 }
 
 bool wfc_find_lowest_entropy(struct wfc_state *wave, const uint64_t w, const uint64_t h,
-                             struct coord *least_entropy_cell) {
-#ifdef WFC_SHANNON_ENTROPY
-  float min_entropy = INFINITY;
-#else
+                             struct grid_coord *least_entropy_cell) {
   uint32_t min_entropy = 0xffffffff;
-#endif
   bool found = false;
 
   for (uint32_t y = 0; y < h; ++y) {
@@ -325,21 +312,9 @@ bool wfc_find_lowest_entropy(struct wfc_state *wave, const uint64_t w, const uin
 
       if (wfc_slot_collapsed(wave, i) || wave->cell[i].entropy == 0) continue;
 
-#ifdef WFC_SHANNON_ENTROPY
-      struct wfc_slot *s = &wave->cell[i];
-      float actual_entropy = logf(s->sum_weights) - (s->sum_wlogw / s->sum_weights);
-      // Add a tiny bit of noise to prevent "flat" patterns
-
-      actual_entropy -= (float)(irand() % 1024) / 10000000.0f;
-      ;
-
-      if (actual_entropy < min_entropy) {
-        min_entropy = actual_entropy;
-#else
       uint32_t count = wave->cell[i].entropy;
       if (count < min_entropy) {
         min_entropy = count;
-#endif
         least_entropy_cell->x = x;
         least_entropy_cell->y = y;
         found = true;
@@ -381,16 +356,16 @@ bool wave_weighted_choice(struct wfc_state *grid, uint32_t cell_idx, uint32_t *c
 
 bool wfc_state_collapse_slot(struct wfc_state *grid, uint32_t cell_idx, wfc_atlas *rules) {
   if (wfc_slot_collapsed(grid, cell_idx) || grid->cell[cell_idx].entropy == 0) return false;
-  uint32_t selected;
-  if (!wave_weighted_choice(grid, cell_idx, &selected, rules)) return false;
+  uint32_t selected_tile;
+  if (!wave_weighted_choice(grid, cell_idx, &selected_tile, rules)) return false;
 
-  wfc_slot_collapse(grid, cell_idx, selected, rules->tile_count);
+  wfc_slot_collapse(grid, cell_idx, selected_tile, rules->tile_count);
 
   return true;
 }
 
-bool get_neighbor(struct coord curr, wfc_direction d, uint32_t w, uint32_t h,
-                  struct coord *neigh_coord) {
+bool get_neighbor(struct grid_coord curr, wfc_direction d, uint32_t w, uint32_t h,
+                  struct grid_coord *neigh_coord) {
   // Directions for exploration
   static int8_t dy[] = {[NORTH] = -1,      [EAST] = 0,        [SOUTH] = 1,      [WEST] = 0,
                         [NORTH_EAST] = -1, [NORTH_WEST] = -1, [SOUTH_EAST] = 1, [SOUTH_WEST] = 1};
@@ -430,17 +405,11 @@ bool wfc_slot_intersect(struct wfc_state *state, uint32_t neigh_idx, uint32_t wo
     new = old[i] & combined_allowed[i];
 
     if (new != old[i]) {
-      uint32_t removed = new ^ old[i];
+      uint64_t removed = new ^ old[i];
 
       while (removed) {
         uint32_t trailing_zero = __builtin_ctzll(removed);
         uint32_t tile_id = (i * 64) + trailing_zero;
-
-#ifdef WFC_SHANNON_ENTROPY
-        float w = (float)atlas->weight[tile_id];
-        cell->sum_weights = fmaxf(0.0f, cell->sum_weights - w);
-        cell->sum_wlogw -= (w * logf(w));
-#endif
 
         cell->entropy--;
         removed &= ~(1ULL << trailing_zero);
@@ -454,15 +423,17 @@ bool wfc_slot_intersect(struct wfc_state *state, uint32_t neigh_idx, uint32_t wo
   return changed;
 }
 
+uint32_t wfc_atlas_tile_count(wfc_atlas *atlas) { return atlas->tile_count; }
+
 bool wfc_state_propagate(struct wfc_state *state, wfc_atlas *atlas, uint32_t width, uint32_t height,
-                         struct coord origin) {
-  istack *stack = istack_create(sizeof(struct coord));
+                         struct grid_coord origin) {
+  istack *stack = istack_create(sizeof(struct grid_coord));
   istack_push(stack, &origin);
 
   uint32_t words = required_uint64s(atlas->tile_count);
   uint64_t *dir_unions = zmalloc(4 * words * sizeof(uint64_t));
 
-  struct coord curr;
+  struct grid_coord curr;
   bool success = true;
 
   while (istack_pop(stack, &curr)) {
@@ -470,7 +441,7 @@ bool wfc_state_propagate(struct wfc_state *state, wfc_atlas *atlas, uint32_t wid
 
     memset(dir_unions, 0, 4 * words * sizeof(uint64_t));
     for (uint32_t wd = 0; wd < words; ++wd) {
-      uint32_t current_tiles = state->cell[curr_idx].possibilities[wd];
+      uint64_t current_tiles = state->cell[curr_idx].possibilities[wd];
 
       while (current_tiles) {
         //  __builtin_ctzll(0xf0==0b11110000) counts trailing zeros  = 8
@@ -491,7 +462,7 @@ bool wfc_state_propagate(struct wfc_state *state, wfc_atlas *atlas, uint32_t wid
     }
 
     for (wfc_direction d = 0; d < 4; ++d) {
-      struct coord neigh_coord;
+      struct grid_coord neigh_coord;
       if (!get_neighbor(curr, d, width, height, &neigh_coord)) continue;
 
       uint32_t neigh_idx = neigh_coord.y * width + neigh_coord.x;
@@ -516,7 +487,7 @@ bool wfc_state_propagate(struct wfc_state *state, wfc_atlas *atlas, uint32_t wid
   return success;
 }
 
-bool wfc_run_collapse(grid *grid, wfc_atlas *rules) {
+bool wfc_run_collapse(grid *grid, wfc_atlas *rules, resource_manager *mgr, uint32_t *start_pt) {
   LOG("%s", __FUNCTION__);
 
   uint64_t size[2];
@@ -533,11 +504,19 @@ bool wfc_run_collapse(grid *grid, wfc_atlas *rules) {
     wfc_atlas_compile(rules);
   }
 
- 
-
   struct wfc_state *wave = wfc_state_create(width, height, rules->tile_count, rules);
-  struct coord cell_to_collapse;
+  struct grid_coord cell_to_collapse;
+  if (!dfs_generate_maze(wave, width, height, start_pt[0], start_pt[1], rules, mgr)) {
+    wave_destroy(wave, width * height);
+    if (clear_mask_cache) {
+      zfree(rules->mask_cache);
+    }
+    return false;
+  }
 
+  LOG("dfs_generate_maze");
+
+#if 1
   while (wfc_find_lowest_entropy(wave, width, height, &cell_to_collapse)) {
     if (!wfc_state_collapse_slot(wave, cell_to_collapse.y * width + cell_to_collapse.x, rules) ||
         !wfc_state_propagate(wave, rules, width, height, cell_to_collapse)) {
@@ -546,18 +525,29 @@ bool wfc_run_collapse(grid *grid, wfc_atlas *rules) {
       return false;
     }
   }
+#endif
 
   for (uint32_t y = 0; y < height; y++) {
     for (uint32_t x = 0; x < width; x++) {
       uint64_t cell_idx = y * width + x;
       grid_cell *gc = grid_get_cell(grid, x, y);
 
+#if 0
+
+      if (wfc_slot_collapsed(wave, y * width + x)) {
+        grid_cell_set_tile_id(gc, 0);
+      } else {
+        grid_cell_set_tile_id(gc, 1);
+      }
+
+#else
       for (uint32_t i = 0; i < rules->tile_count; i++) {
         if (wfc_slot_has_tile(wave, cell_idx, i)) {
           grid_cell_set_tile_id(gc, i);
           break;
         }
       }
+#endif
     }
   }
 

@@ -28,9 +28,9 @@ void game_logic_destroy(game_logic *logic) {
 }
 
 void game_logic_update(game_logic *logic, float delta_time) {
-  event_system_update(logic->event_system);
   process_manager_update(logic->process_manager, delta_time);
   systems_update(logic, delta_time);
+  event_system_update(logic->event_system);
 }
 
 event_system *game_logic_get_event_system(game_logic *logic) {

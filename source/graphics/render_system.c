@@ -117,7 +117,7 @@ void raylib_render(game_logic *logic) {
       continue;
     }
 
-#if 0
+#if 1
     uint32_t aabb_i;
     if (!component_get_dense_id((struct generic_component *)aabb_component, e, &aabb_i)) continue;
 
@@ -125,15 +125,15 @@ void raylib_render(game_logic *logic) {
     if (!component_get_dense_id((struct generic_component *)position_component, e, &pos_i))
       continue;
 
-    DrawRectangle(render_component->streams->interpolated_position[pos_i].x -
+    DrawRectangle(render_component->streams->interpolated_position[i].x -
                       aabb_component->streams->extent[aabb_i].x,
-                  render_component->streams->interpolated_position[pos_i].y -
+                  render_component->streams->interpolated_position[i].y -
                       aabb_component->streams->extent[aabb_i].y,
                   aabb_component->streams->extent[aabb_i].x * 2,
                   aabb_component->streams->extent[aabb_i].y * 2,
                   CLITERAL(Color){render_component->streams->color[i].x,
                                   render_component->streams->color[i].y,
-                                  render_component->streams->color[i].z, 255});
+                                  render_component->streams->color[i].z, 180});
 #endif
   }
 }

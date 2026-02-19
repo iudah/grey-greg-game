@@ -23,6 +23,7 @@ set(SOURCE_FILES
     game_logic/entities/actor_manager.c
     game_logic/entities/entity.c
     game_logic/game_logic.c
+    game_logic/grid/dfs_maze.c
     game_logic/grid/grid.c
     game_logic/grid/wave_fn_collapse.c
     game_logic/process_manager.c
@@ -36,5 +37,4 @@ set(SOURCE_FILES
     network/network.c
     physics/gravity_system.c
     physics/physics_system.c
-    resources/resource_manager.c
-)
+    resources/resource_manager.c)
