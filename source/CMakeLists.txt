@@ -131,6 +131,10 @@ if(NOT TARGET pcg_external)
     COMMAND ${CMAKE_COMMAND} -E copy "<SOURCE_DIR>/src/libpcg_random.a" "${PCG_STATIC_LIB}"
     BUILD_BYPRODUCTS "${PCG_STATIC_LIB}"
   )
+
+file(MAKE_DIRECTORY ${PCG_INSTALL_DIR})
+file(MAKE_DIRECTORY ${PCG_INCLUDE_DIR})
+file(MAKE_DIRECTORY ${PCG_LIB_DIR})
 endif()
 
 add_library(pcg_imported STATIC IMPORTED GLOBAL)
