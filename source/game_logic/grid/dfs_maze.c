@@ -2,6 +2,7 @@
 #include <irand.h>
 #include <istack.h>
 #include <strings.h>
+#include <string.h>
 #include <zot.h>
 
 #include "grid.h"
