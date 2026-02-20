@@ -2,6 +2,7 @@
 #define ISTACK_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include "ilist.h"
 
