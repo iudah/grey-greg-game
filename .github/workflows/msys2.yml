@@ -1,6 +1,5 @@
 name: MSYS2
 on: [push, pull_request]
-
 jobs:
   msys2-ucrt64:
     runs-on: windows-latest
@@ -13,26 +12,31 @@ jobs:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v3
-
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
           update: true
-          install: git mingw-w64-ucrt-x86_64-gcc cmake make mingw-w64-ucrt-x86_64-glfw
+          install: >-
+            git
+            cmake
+            ninja
+            mingw-w64-ucrt-x86_64-clang
+            mingw-w64-ucrt-x86_64-glfw
 
       - name: Set reusable strings
         id: strings
-        shell: msys2 {0}
         run: |
-          echo "build-test-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT";
-          echo "build-output-dir=/${{ github.workspace }}/build"|sed "s#:\\\\#/#g"|sed "s#\\\\#/#g" >> "$GITHUB_OUTPUT";
-          echo "build-src-dir=/${{ github.workspace }}"|sed "s#:\\\\#/#g"|sed "s#\\\\#/#g" >> "$GITHUB_OUTPUT";
+          BUILD_DIR=$(echo "/${{ github.workspace }}/build" | sed "s#:\\\\#/#g" | sed "s#\\\\#/#g")
+          SRC_DIR=$(echo "/${{ github.workspace }}" | sed "s#:\\\\#/#g" | sed "s#\\\\#/#g")
+          echo "build-output-dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
+          echo "build-src-dir=$SRC_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_COMPILER=g++
-          -DCMAKE_C_COMPILER=gcc
+          -G Ninja
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -S ${{ steps.strings.outputs.build-src-dir }}
 
@@ -40,5 +44,4 @@ jobs:
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
       - name: Test
-        working-directory: ${{ steps.strings.outputs.build-test-dir }}
-        run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --output-on-failure --build-config ${{ matrix.build_type }}
