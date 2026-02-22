@@ -1,6 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
-
-void init_world();
+#include <game_logic.h>
+void init_world(game_logic *logic);
 
 #endif
