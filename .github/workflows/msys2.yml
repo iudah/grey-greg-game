@@ -36,9 +36,10 @@ jobs:
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -G Ninja
-          -DCMAKE_C_COMPILER=clang
           -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_COMPILER=clang
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_EXE_LINKER_FLAGS="-lgdi32 -luser32 -lkernel32"
           -S ${{ steps.strings.outputs.build-src-dir }}
 
       - name: Build
