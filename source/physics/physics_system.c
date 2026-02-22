@@ -55,7 +55,7 @@ bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext, struct vec4_st *
 
   auto l_eq = vcleq_f32(pos_diff, ext_sum);
 
-  return vgetq_lane_s32(l_eq, 0) & vgetq_lane_s32(l_eq, 1) & vgetq_lane_s32(l_eq, 2) != 0;
+  return (vgetq_lane_s32(l_eq, 0) & vgetq_lane_s32(l_eq, 1) & vgetq_lane_s32(l_eq, 2)) != 0;
 }
 
 void euler_method() {
