@@ -32,11 +32,12 @@ bool set_entity_color(entity e, uint32_t rgba) {
   }
 
   auto color = render_component->streams->color;
+  uint32_t dense_idx = render_component->set.sparse[e.id];
 
-  color[e.id].w = rgba & 0xff;
-  color[e.id].z = (rgba >> 0x08) & 0xff;
-  color[e.id].y = (rgba >> 0x10) & 0xff;
-  color[e.id].x = (rgba >> 0x18) & 0xff;
+  color[dense_idx].w = rgba & 0xff;
+  color[dense_idx].z = (rgba >> 0x08) & 0xff;
+  color[dense_idx].y = (rgba >> 0x10) & 0xff;
+  color[dense_idx].x = (rgba >> 0x18) & 0xff;
 
   return true;
 }
