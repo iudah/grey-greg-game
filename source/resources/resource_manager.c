@@ -58,5 +58,8 @@ Texture2D *resource_get_tile_texture(resource_manager *mgr, uint32_t tile_id) {
 }
 
 resc_tile_flag resource_get_tile_flag(resource_manager *mgr, uint32_t tile_id) {
-  return ((struct tile *)ilist_get(mgr->tiles, tile_id))->flag;
+  struct tile *tile =ilist_get(mgr->tiles, tile_id);
+  if(!tile)return TILE_UNKNOWN;
+  else
+  return tile->flag;
 }
