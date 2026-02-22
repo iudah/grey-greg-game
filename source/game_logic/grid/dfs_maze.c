@@ -60,10 +60,10 @@ void carve_room_air(uint64_t *visited, wfc_atlas *atlas, uint32_t width, uint32_
 uint32_t count_air_column(uint64_t *visited, uint32_t width, uint32_t height, uint32_t x,
                           uint32_t y) {
   uint32_t col_height = 0;
-  uint32_t up = y - 1;
-  uint32_t dn = y + 1;
+  int32_t up = y - 1;
+  int32_t dn = y + 1;
 
-  while (up < height) {
+  while (up>=0 && up < height) {
 #if 0
     if (!cell_is_visited(visited, up * width + x)) break;
     if (x + 1 < width && cell_is_visited(visited, up * width + (x + 1))) break;
@@ -84,7 +84,7 @@ uint32_t count_air_column(uint64_t *visited, uint32_t width, uint32_t height, ui
 #endif
   }
 
-  while (dn < height) {
+  while (dn>=0 && dn < height) {
 #if 0
     if (!cell_is_visited(visited, dn * width + x)) break;
     if (x + 1 < width && cell_is_visited(visited, dn * width + (x + 1))) break;
