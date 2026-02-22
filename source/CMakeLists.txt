@@ -172,7 +172,9 @@ if(${BUILD_RAYLIB})
           -DUSE_EXTERNAL_GLFW=OFF
           -DGLFW_BUILD_X11=OFF
           -DGLFW_BUILD_WAYLAND=OFF
-          -DGLFW_BUILD_WIN32=ON)
+          -DGLFW_BUILD_WIN32=ON
+          -D_GLFW_WIN32=1)
+       message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
       endif()
 
     ExternalProject_Add(
