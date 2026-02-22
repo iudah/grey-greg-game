@@ -1,6 +1,6 @@
 name: Windows Build
 
-on: push # when to trigger this. Here, on every push
+on: [push, pull_request]
 jobs:
   build_and_test:
     name: "Build and test"
