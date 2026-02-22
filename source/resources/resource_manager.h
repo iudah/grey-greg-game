@@ -5,7 +5,7 @@
 
 typedef struct resource_manager resource_manager;
 typedef enum {
-  TILE_NO_FLAG = 0,
+  TILE_UNKNOWN = 0,
   TILE_SOLID = 1 << 0,
   TILE_WALKABLE = 1 << 1,
   TILE_HAZARD = 1 << 2,
