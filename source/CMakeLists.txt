@@ -164,9 +164,9 @@ if(${BUILD_RAYLIB})
       set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DPLATFORM=${PLATFORM})
     endif()
-      if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
-      OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
-      OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+      if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows"
+      OR ${CMAKE_SYSTEM_NAME} STREQUAL "CYGWIN"
+      OR ${CMAKE_SYSTEM_NAME} STREQUAL "MSYS")
         list(APPEND RAYLIB_EXTRA_ARGS
           -DPLATFORM=Desktop
           -DUSE_EXTERNAL_GLFW=OFF
@@ -264,9 +264,9 @@ target_link_libraries(${TARGET} PUBLIC pcg::pcg)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
-  OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
-  OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows"
+      OR ${CMAKE_SYSTEM_NAME} STREQUAL "CYGWIN"
+      OR ${CMAKE_SYSTEM_NAME} STREQUAL "MSYS")
   target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
