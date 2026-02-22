@@ -169,11 +169,12 @@ if(${BUILD_RAYLIB})
       OR ${CMAKE_SYSTEM_NAME} STREQUAL "MSYS")
         list(APPEND RAYLIB_EXTRA_ARGS
           -DPLATFORM=Desktop
+          -DCMAKE_SYSTEM_NAME=Windows
           -DUSE_EXTERNAL_GLFW=OFF
           -DGLFW_BUILD_X11=OFF
           -DGLFW_BUILD_WAYLAND=OFF
           -DGLFW_BUILD_WIN32=ON
-          -D_GLFW_WIN32=1)
+          -D_GLFW_WIN32=ON)
        message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
       endif()
 
