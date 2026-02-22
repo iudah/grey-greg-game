@@ -95,8 +95,8 @@ void ai_update_state(entity npc, entity player) {
   if (!npc_pos || !player_pos) return;
 
   float dist = distance(npc_pos, player_pos, false, NULL);
-  ai_state current = states[npc.id];
   uint32_t j = ai_component->set.sparse[npc.id];
+  ai_state current = states[j];
 
   switch (current) {
     case AI_PATROL:
