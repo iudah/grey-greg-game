@@ -163,24 +163,7 @@ if(${BUILD_RAYLIB})
       endif()
       set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DPLATFORM=${PLATFORM})
-
-        # More robust Windows/MSYS detection
-      if(WIN32 OR MINGW OR MSYS OR CYGWIN OR 
-         CMAKE_SYSTEM_NAME STREQUAL "Windows" OR
-         CMAKE_SYSTEM_NAME STREQUAL "MSYS" OR
-         CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
-        list(APPEND RAYLIB_EXTRA_ARGS
-          -DPLATFORM=Desktop
-          -DCMAKE_SYSTEM_NAME=Windows
-          -DUSE_EXTERNAL_GLFW=OFF
-          -DGLFW_BUILD_X11=OFF
-          -DGLFW_BUILD_WAYLAND=OFF
-          -DGLFW_BUILD_WIN32=ON
-          -D_GLFW_WIN32=ON)
-        message(STATUS "Detected Windows/MSYS environment, disabling X11")
-      endif()
     endif()
-      
 
     ExternalProject_Add(
       raylib
@@ -269,10 +252,9 @@ target_link_libraries(${TARGET} PUBLIC pcg::pcg)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 
-if(WIN32 OR MINGW OR MSYS OR CYGWIN OR 
-   CMAKE_SYSTEM_NAME STREQUAL "Windows" OR
-   CMAKE_SYSTEM_NAME STREQUAL "MSYS" OR
-   CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
+  OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
+  OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
   target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
