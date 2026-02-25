@@ -14,8 +14,8 @@ jobs:
         with:
           msystem: UCRT64
           update: true
+          path-type: inherit
           install: >-
-            git
             mingw-w64-ucrt-x86_64-clang
             mingw-w64-ucrt-x86_64-glfw
             mingw-w64-ucrt-x86_64-ninja
@@ -43,9 +43,8 @@ jobs:
           export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
           cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
             -G Ninja \
-            -DCMAKE_CXX_COMPILER="${{ steps.msys2.outputs.ucrt64bin }}/clang++.exe" \
-            -DCMAKE_C_COMPILER="${{ steps.msys2.outputs.ucrt64bin }}/clang.exe" \
-            -DCMAKE_MAKE_PROGRAM="${{ steps.msys2.outputs.ucrt64bin }}/ninja.exe" \
+            -DCMAKE_CXX_COMPILER=clang++.exe \
+            -DCMAKE_C_COMPILER=clang.exe \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_SYSTEM_NAME=Windows \
             -S "${{ steps.strings.outputs.build-src-dir }}"
