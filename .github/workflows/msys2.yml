@@ -1,12 +1,8 @@
 name: MSYS2
 on: [push, pull_request]
-
 jobs:
   msys2-ucrt64:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     strategy:
       fail-fast: true
       matrix:
@@ -18,27 +14,52 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          install: git mingw-w64-ucrt-x86_64-gcc cmake make 
+          path-type: inherit
+          install: >-
+            mingw-w64-ucrt-x86_64-clang
+            mingw-w64-ucrt-x86_64-glfw
+            mingw-w64-ucrt-x86_64-ninja
+
+      - name: Set up Windows CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.28'
+
+      - name: Get MSYS2 ucrt64 bin path
+        id: msys2
+        shell: msys2 {0}
+        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
 
       - name: Set reusable strings
         id: strings
-        shell: msys2 {0}
+        shell: bash
         run: |
-          echo "build-test-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT";
-          echo "build-output-dir=/${{ github.workspace }}/build"|sed "s#:\\\\#/#g"|sed "s#\\\\#/#g" >> "$GITHUB_OUTPUT";
-          echo "build-src-dir=/${{ github.workspace }}"|sed "s#:\\\\#/#g"|sed "s#\\\\#/#g" >> "$GITHUB_OUTPUT";
+          echo "build-output-dir=$(pwd)/build" >> "$GITHUB_OUTPUT"
+          echo "build-src-dir=$(pwd)" >> "$GITHUB_OUTPUT"
 
       - name: Configure CMake
-        run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_COMPILER=g++
-          -DCMAKE_C_COMPILER=gcc
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -S ${{ steps.strings.outputs.build-src-dir }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
+            -G Ninja \
+            -DCMAKE_CXX_COMPILER=clang++.exe \
+            -DCMAKE_C_COMPILER=clang.exe \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -S "${{ steps.strings.outputs.build-src-dir }}"
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          cmake --build "${{ steps.strings.outputs.build-output-dir }}" \
+            --config ${{ matrix.build_type }}
 
       - name: Test
-        working-directory: ${{ steps.strings.outputs.build-test-dir }}
-        run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          ctest --test-dir "${{ steps.strings.outputs.build-output-dir }}" \
+            --output-on-failure \
+            --build-config ${{ matrix.build_type }}

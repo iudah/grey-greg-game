@@ -252,12 +252,6 @@ target_link_libraries(${TARGET} PUBLIC pcg::pcg)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
-  OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
-  OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
-  target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
-endif()
-
 if(${PLATFORM_IS_ANDROID})
   target_link_libraries(
     ${TARGET}
@@ -288,6 +282,12 @@ if(${BUILD_RAYLIB})
   target_link_libraries(${TARGET} PUBLIC raylib::raylib)
 else()
   target_compile_options(${TARGET} PRIVATE -DNO_RAYLIB=1)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
+  OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
+  OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+  target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
 target_compile_features(${TARGET} PUBLIC c_std_23)
