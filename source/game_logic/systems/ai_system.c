@@ -84,73 +84,69 @@ void patrol(entity e, float vel[4]) {
 
 void idle(entity e) { set_velocity(e, (float[3]){0, 0, 0}); }
 
-ai_state get_ai_state(entity npc) { return ai_component->streams->state[npc.id]; }
-
 void ai_update_state(entity npc, entity player) {
-  ai_state *states = ai_component->streams->state;
-
   struct vec4_st *npc_pos = get_position(npc);
   struct vec4_st *player_pos = get_position(player);
 
   if (!npc_pos || !player_pos) return;
 
   float dist = distance(npc_pos, player_pos, false, NULL);
-  uint32_t j = ai_component->set.sparse[npc.id];
-  ai_state current = states[j];
+  ai_state *current = get_ai_state(npc);
 
-  switch (current) {
+  switch (*current) {
     case AI_PATROL:
       if (dist - CHASE_RADIUS < GREY_ZERO) {
         LOG("NPC %d transitioning PATROL → CHASE", npc.id);
-        states[j] = AI_CHASE;
+        *current = AI_CHASE;
       }
       break;
 
     case AI_CHASE:
       if (dist - ATTACK_RANGE < GREY_ZERO) {
         LOG("NPC %d transitioning CHASE → ATTACK", npc.id);
-        states[j] = AI_ATTACK;
+        *current = AI_ATTACK;
       } else if (dist - CHASE_LOST_RADIUS > GREY_ZERO) {
         LOG("NPC %d transitioning CHASE → PATROL", npc.id);
-        states[j] = AI_PATROL;
+        *current = AI_PATROL;
       }
       break;
 
     case AI_ATTACK:
       if (dist - ATTACK_RANGE > GREY_ZERO) {
         LOG("NPC %d transitioning ATTACK → CHASE", npc.id);
-        states[j] = AI_CHASE;
+        *current = AI_CHASE;
       }
       break;
 
     case AI_FLEE:
       if (dist - FLEE_RADIUS > GREY_ZERO) {
         LOG("NPC %d transitioning FLEE → IDLE", npc.id);
-        states[j] = AI_IDLE;
+        *current = AI_IDLE;
       }
       break;
 
     case AI_IDLE:
       if (dist - CHASE_RADIUS < GREY_ZERO) {
         LOG("NPC %d transitioning IDLE → CHASE", npc.id);
-        states[j] = AI_CHASE;
+        *current = AI_CHASE;
       }
       break;
   }
 }
 
 void ai_system_update(game_logic *logic, float delta_time) {
-  ai_state *states = ai_component->streams->state;
   float velocity[4];
   extern entity player;
 
   for (uint32_t i = 0; i < ai_component->set.count; ++i) {
-    ai_state state = states[i];
     entity npc = ai_component->set.dense[i];
 
+    if (npc.generation == player.generation && npc.id == player.id) continue;
     ai_update_state(npc, player);
 
-    switch (state) {
+    ai_state *current = get_ai_state(npc);
+
+    switch (*current) {
       case AI_IDLE:
         LOG("NPC %d is idle.", npc.id);
         idle(npc);

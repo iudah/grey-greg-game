@@ -2,6 +2,7 @@
 #define COMPONENT_H
 
 #include <entity.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #define GET_BIT(mask, id)   ((mask)[(id) / 64] & (UINT64_C(1) << ((id) % 64)))
@@ -59,5 +60,27 @@ static inline bool component_get_dense_id(struct generic_component *component, e
   *dense_id = dense_idx;
   return true;
 }
+
+static inline void *component_get_stream_ptr(struct generic_component *component, entity e,
+                                             uint8_t stream_idx, size_t element_size) {
+  uint32_t dense_id;
+  if (!component_get_dense_id(component, e, &dense_id)) return NULL;
+  return (uint8_t *)component->streams[stream_idx] + dense_id * element_size;
+}
+
+#define COMPONENT_GET(component, e, stream_field)                                 \
+  (__typeof__((component)->streams->stream_field + 0))component_get_stream_ptr(   \
+      (struct generic_component *)(component), (e),                               \
+      offsetof(__typeof__(*(component)->streams), stream_field) / sizeof(void *), \
+      sizeof(*(component)->streams->stream_field))
+
+#define COMPONENT_DEFINE(NAME, STRUCT_NAME)         \
+  struct NAME##_component {                         \
+    component_set set;                              \
+    struct STRUCT_NAME *streams;                    \
+  };                                                \
+                                                    \
+  extern struct NAME##_component *NAME##_component; \
+  bool initialize_##NAME##_component();
 
 #endif

@@ -3,15 +3,6 @@
 
 #include "component_base.h"
 
-struct scale_component {
-  component_set set;
-  struct {
-    struct vec4_st* scale;
-  }* streams;
-};
-
-extern struct scale_component* scale_component;
-
-bool initialize_scale_component();
+COMPONENT_DEFINE(scale, { struct vec4_st *scale; });
 
 #endif

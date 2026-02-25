@@ -31,13 +31,12 @@ bool set_entity_color(entity e, uint32_t rgba) {
     rgba = (rgba << 0x8) | 0xff;
   }
 
-  auto color = render_component->streams->color;
-  uint32_t dense_idx = render_component->set.sparse[e.id];
+  struct vec4_st *color = get_color(e);
 
-  color[dense_idx].w = rgba & 0xff;
-  color[dense_idx].z = (rgba >> 0x08) & 0xff;
-  color[dense_idx].y = (rgba >> 0x10) & 0xff;
-  color[dense_idx].x = (rgba >> 0x18) & 0xff;
+  color->w = rgba & 0xff;
+  color->z = (rgba >> 0x08) & 0xff;
+  color->y = (rgba >> 0x10) & 0xff;
+  color->x = (rgba >> 0x18) & 0xff;
 
   return true;
 }

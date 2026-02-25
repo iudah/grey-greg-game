@@ -59,48 +59,43 @@ bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext, struct vec4_st *
 }
 
 void euler_method() {
-  struct vec4_st *prev_pos = position_component->stream->prev_position;
-  struct vec4_st *pos = position_component->stream->position;
-  struct vec4_st *vel = velocity_component->streams->velocity;
-  //  float *mass = velocity_component->streams->velocity;
-
-  assert(position_component->set.count <= position_component->set.dense_capacity);
-  memcpy(prev_pos, pos, position_component->set.count * sizeof(*prev_pos));
+  snapshot_positions();
 
   for (uint32_t i = 0; i < velocity_component->set.count; ++i) {
     entity entity = velocity_component->set.dense[i];
-    uint32_t j;
-    if (!component_get_dense_id((struct generic_component *)position_component, entity, &j))
-      continue;
+    auto position = get_position(entity);
+    auto velocity = get_velocity(entity);
+
+    if (!position || !velocity) continue;
 
     auto t = vdupq_n_f32(TIMESTEP);
-    auto v = vld1q_f32((void *)&vel[i]);
+    auto v = vld1q_f32((void *)velocity);
 
-    if (has_component(entity, (struct generic_component *)mass_component) &&
-        has_component(entity, (struct generic_component *)force_component)) {
-      auto mass = get_mass(entity);
-      if (mass < GREY_ZERO) mass = 1;
-      auto zero_f = (struct vec4_st){0, 0, 0, 0};
-      auto force = get_force(entity);
-      if (!force) force = &zero_f;
+    float default_mass = 1.f;
+    float *mass = get_mass(entity);
+    if (!mass || *mass < GREY_ZERO) mass = &default_mass;
 
-      auto f = vld1q_f32((float *)force);
-      auto a = vmulq_f32(f, vdupq_n_f32(1. / mass));
-      v = vmlaq_f32(v, a, t);
-    }
-    auto p = vld1q_f32((void *)&pos[j]);
+    auto zero_f = (struct vec4_st){0, 0, 0, 0};
+    struct vec4_st *force = get_force(entity);
+    if (!force) force = &zero_f;
+
+    auto f = vld1q_f32((float *)force);
+    auto a = vmulq_f32(f, vdupq_n_f32(1. / *mass));
+    v = vmlaq_f32(v, a, t);
+
+    auto p = vld1q_f32((void *)position);
     p = vmlaq_f32(p, v, t);
 
-    vst1q_f32((void *)&vel[i], v);
-    vst1q_f32((void *)&pos[j], p);
+    vst1q_f32((void *)velocity, v);
+    vst1q_f32((void *)position, p);
   }
 }
 
 #if 0
 void verlet_integration_method()
 {
-  struct vec4_st *prev_pos_arr = position_component->stream->prev_position;
-  struct vec4_st *pos_arr = position_component->stream->position;
+  struct vec4_st *prev_pos_arr = position_component->streams->prev_position;
+  struct vec4_st *pos_arr = position_component->streams->position;
   struct vec4_st *acc_arr = (struct vec4_st *)(float[]){0, 0, 0, 0}; // velocity_component->streams->acceleration;
 
   auto dt = vdupq_n_f32(TIMESTEP);
@@ -341,10 +336,10 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
 }
 
 void compute_collisions(game_logic *logic) {
-  float *radii = aabb_component->streams->radius;
-  struct vec4_st *extents = aabb_component->streams->extent;
-  struct vec4_st *physix_positions = position_component->stream->position;
-  struct vec4_st *physix_previous_positions = position_component->stream->prev_position;
+  float *radii = aabb_component->streams->collision_radius;
+  struct vec4_st *extents = aabb_component->streams->collision_extent;
+  struct vec4_st *physix_positions = position_component->streams->position;
+  struct vec4_st *physix_previous_positions = position_component->streams->previous_position;
 
   if (!physix_previous_positions) physix_previous_positions = physix_positions;
 
@@ -409,27 +404,22 @@ void update_position(entity e, float *pos, float *prev_pos, float fac, int coll_
 }
 
 bool resolve_walkthrough(entity a, entity b) {
-  struct vec4_st *extents = aabb_component->streams->extent;
-  struct vec4_st *physix_positions = position_component->stream->position;
-  struct vec4_st *physix_previous_positions = position_component->stream->prev_position;
+  struct vec4_st *prev_pos_a = get_previous_position(a);
+  struct vec4_st *prev_pos_b = get_previous_position(b);
+  struct vec4_st *pos_a = get_position(a);
+  struct vec4_st *pos_b = get_position(b);
+  struct vec4_st *aabb_extent_a = get_collision_extent(a);
+  struct vec4_st *aabb_extent_b = get_collision_extent(b);
 
-  uint32_t pos_a, pos_b, aabb_a, aabb_b;
-
-  if (!component_get_dense_id((struct generic_component *)position_component, a, &pos_a))
+  if (!prev_pos_a || !prev_pos_b || !pos_a || !pos_b || !aabb_extent_a || !aabb_extent_b)
     return false;
-  if (!component_get_dense_id((struct generic_component *)position_component, b, &pos_b))
-    return false;
-
-  if (!component_get_dense_id((struct generic_component *)aabb_component, a, &aabb_a)) return false;
-  if (!component_get_dense_id((struct generic_component *)aabb_component, b, &aabb_b)) return false;
 
   int coll_axis;
   float fac;
 
   // Check for collision
-  if (!ray_box_collision(&physix_previous_positions[pos_a], &physix_previous_positions[pos_b],
-                         &physix_positions[pos_a], &physix_positions[pos_b], &extents[aabb_a],
-                         &extents[aabb_b], &fac, &coll_axis)) {
+  if (!ray_box_collision(prev_pos_a, prev_pos_b, pos_a, pos_b, aabb_extent_a, aabb_extent_b, &fac,
+                         &coll_axis)) {
     return false;
   }
 
@@ -438,13 +428,12 @@ bool resolve_walkthrough(entity a, entity b) {
   // Adjust positions based on collision
   float safe_fac = fac > GREY_AABB_GAP ? fac - GREY_AABB_GAP : 0.0f;
 
-  update_position(a, (float *)&physix_positions[pos_a], (float *)&physix_previous_positions[pos_a],
-                  safe_fac, coll_axis);
-  update_position(b, (float *)&physix_positions[pos_b], (float *)&physix_previous_positions[pos_b],
-                  safe_fac, coll_axis);
+  update_position(a, (float *)pos_a, (float *)prev_pos_a, safe_fac, coll_axis);
+  update_position(b, (float *)pos_b, (float *)prev_pos_b, safe_fac, coll_axis);
 
   return true;
 }
+
 bool walk_through_resolution(event *e) {
   // printf("______________%s\n", __FUNCTION__);
 
@@ -456,50 +445,44 @@ bool walk_through_resolution(event *e) {
 }
 
 bool set_entity_waypoint(entity e, float x, float y, float z) {
-  if (!has_component(e, (struct generic_component *)waypoint_component)) return false;
+  struct vec4_st *waypoint = get_waypoint(e);
+  if (!waypoint) return false;
 
-  uint32_t j = waypoint_component->set.sparse[e.id];
-
-  waypoint_component->streams->waypoint[j].x = x;
-  waypoint_component->streams->waypoint[j].y = y;
-  waypoint_component->streams->waypoint[j].z = z;
+  waypoint->x = x;
+  waypoint->y = y;
+  waypoint->z = z;
 
   return true;
 }
 
 bool set_entity_aabb_lim(entity e, float x, float y, float z) {
-  if (!has_component(e, (struct generic_component *)aabb_component)) return false;
+  struct vec4_st *collision_extent = get_collision_extent(e);
+  float *collision_radius = get_collision_radius(e);
 
-  uint32_t j = aabb_component->set.sparse[e.id];
+  if (!collision_extent || !collision_radius) return false;
 
   // half extents
-  aabb_component->streams->extent[j].x = x;
-  aabb_component->streams->extent[j].y = y;
-  aabb_component->streams->extent[j].z = z;
+  collision_extent->x = x;
+  collision_extent->y = y;
+  collision_extent->z = z;
 
-  aabb_component->streams->radius[j] = sqrtf(x * x + y * y + z * z);
+  *collision_radius = sqrtf(x * x + y * y + z * z);
 
   return true;
 }
 
-struct vec4_st *get_next_patrol_point(entity e) {
-  if (!has_component(e, (struct generic_component *)waypoint_component)) return NULL;
-
-  uint32_t j = waypoint_component->set.sparse[e.id];
-
-  return &waypoint_component->streams->waypoint[j];
-}
+struct vec4_st *get_next_patrol_point(entity e) { return get_waypoint(e); }
 
 bool advance_patrol_index(entity e) {
-  if (!has_component(e, (struct generic_component *)waypoint_component)) return false;
+  auto waypoint = get_waypoint(e);
 
-  uint32_t j = waypoint_component->set.sparse[e.id];
+  if (!waypoint) return false;
 
   // TODO: Use angle of view to randomly choose waypoint
 
-  waypoint_component->streams->waypoint[j].x++;
-  waypoint_component->streams->waypoint[j].y++;
-  waypoint_component->streams->waypoint[j].z++;
+  waypoint->x++;
+  waypoint->y++;
+  waypoint->z++;
 
   return true;
 }

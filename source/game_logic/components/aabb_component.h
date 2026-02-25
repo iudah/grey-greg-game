@@ -3,16 +3,16 @@
 
 #include "component_base.h"
 
-struct aabb_component {
-  component_set set;
-  struct {
-    struct vec4_st *extent;
-    float *radius;
-  } *streams;
-};
+COMPONENT_DEFINE(aabb, {
+  struct vec4_st *collision_extent;
+  float *collision_radius;
+});
 
-extern struct aabb_component *aabb_component;
-
-bool initialize_aabb_component();
+static inline struct vec4_st *get_collision_extent(entity e) {
+  return COMPONENT_GET(aabb_component, e, collision_extent);
+}
+static inline float *get_collision_radius(entity e) {
+  return COMPONENT_GET(aabb_component, e, collision_radius);
+}
 
 #endif

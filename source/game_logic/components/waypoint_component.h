@@ -3,15 +3,9 @@
 
 #include "component_base.h"
 
-struct waypoint_component {
-  component_set set;
-  struct {
-    struct vec4_st* waypoint;
-  }* streams;
-};
-
-extern struct waypoint_component* waypoint_component;
-
-bool initialize_waypoint_component();
+COMPONENT_DEFINE(waypoint, { struct vec4_st *waypoint; });
+static inline struct vec4_st *get_waypoint(entity e) {
+  return COMPONENT_GET(waypoint_component, e, waypoint);
+}
 
 #endif

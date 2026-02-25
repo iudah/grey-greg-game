@@ -17,14 +17,7 @@ bool initialize_mass_component() {
   return mass_component != NULL && component_intialized;
 }
 
-float get_mass(entity e) {
-  uint32_t dense_idx;
-  if (!component_get_dense_id((struct generic_component*)mass_component, e,
-                              &dense_idx))
-    return 0;
 
-  return mass_component->stream->mass[dense_idx];
-}
 
 bool set_mass(entity e, float mass) {
   uint32_t dense_idx;

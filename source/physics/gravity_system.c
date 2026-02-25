@@ -8,13 +8,14 @@
 
 void gravity_system_update(game_logic *logic, float delta_time) {
 #define GRAVITATIONAL_ACCEL (9.8f)
-  float *mass = mass_component->stream->mass;
   for (uint32_t i = 0; i < mass_component->set.count; ++i) {
-    auto e = get_entity((struct generic_component *)mass_component, i);
-    auto mass = get_mass(e);
+    entity e = get_entity((struct generic_component *)mass_component, i);
+    float *mass = get_mass(e);
 
-    if (mass < GREY_ZERO) continue;
+    if (!mass) continue;
 
-    add_force(e, (float[]){0, GRAVITATIONAL_ACCEL * mass, 0, 0});
+    if (*mass < GREY_ZERO) continue;
+
+    add_force(e, (float[]){0, GRAVITATIONAL_ACCEL * *mass, 0, 0});
   }
 }

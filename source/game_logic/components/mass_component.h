@@ -3,20 +3,11 @@
 
 #include "component_base.h"
 
-struct mass_component {
-  component_set set;
-  struct {
-    float* mass;
-  }* stream;
-};
+COMPONENT_DEFINE(mass, { float *mass; });
 
-extern struct mass_component* mass_component;
-
-bool initialize_mass_component();
-float get_mass(entity e);
+static inline
+float *get_mass(entity e) { return COMPONENT_GET(mass_component, e, mass); }
 bool set_mass(entity e, float mass);
-static inline bool set_entity_mass(entity e, float mass) {
-  return set_mass(e, mass);
-}
+static inline bool set_entity_mass(entity e, float mass) { return set_mass(e, mass); }
 
 #endif

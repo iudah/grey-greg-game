@@ -11,8 +11,8 @@ bool initialize_aabb_component() {
 
   bool component_intialized =
       initialize_component(component,
-                           (uint64_t[]){sizeof(*aabb_component->streams->extent),
-                                        sizeof(*aabb_component->streams->radius)},
+                           (uint64_t[]){sizeof(*aabb_component->streams->collision_extent),
+                                        sizeof(*aabb_component->streams->collision_radius)},
                            sizeof(*aabb_component->streams) / sizeof(void *));
 
   return aabb_component != NULL && component_intialized;
