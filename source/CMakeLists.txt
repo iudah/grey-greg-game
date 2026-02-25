@@ -273,7 +273,7 @@ if(WIN32 OR MINGW OR MSYS OR CYGWIN OR
    CMAKE_SYSTEM_NAME STREQUAL "Windows" OR
    CMAKE_SYSTEM_NAME STREQUAL "MSYS" OR
    CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
-  target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm user32 kernel32)
+  target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
 if(${PLATFORM_IS_ANDROID})
