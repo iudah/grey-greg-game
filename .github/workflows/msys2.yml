@@ -43,8 +43,8 @@ jobs:
           export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
           cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
             -G Ninja \
-            -DCMAKE_CXX_COMPILER=clang++.exe \
-            -DCMAKE_C_COMPILER=clang.exe \
+            -DCMAKE_CXX_COMPILER=${{ steps.msys2.outputs.ucrt64bin }}\clang++.exe \
+            -DCMAKE_C_COMPILER=${{ steps.msys2.outputs.ucrt64bin }}\clang.exe \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_SYSTEM_NAME=Windows \
             -S "${{ steps.strings.outputs.build-src-dir }}"
