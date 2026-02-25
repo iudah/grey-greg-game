@@ -3,47 +3,64 @@ on: [push, pull_request]
 jobs:
   msys2-ucrt64:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     strategy:
       fail-fast: true
       matrix:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v3
+
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
           update: true
           install: >-
             git
-            cmake
-            ninja
-            make
             mingw-w64-ucrt-x86_64-clang
             mingw-w64-ucrt-x86_64-glfw
+            mingw-w64-ucrt-x86_64-ninja
+
+      - name: Set up Windows CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.28'
+
+      - name: Get MSYS2 ucrt64 bin path
+        id: msys2
+        shell: msys2 {0}
+        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
 
       - name: Set reusable strings
         id: strings
+        shell: bash
         run: |
-          BUILD_DIR=$(echo "/${{ github.workspace }}/build" | sed "s#:\\\\#/#g" | sed "s#\\\\#/#g")
-          SRC_DIR=$(echo "/${{ github.workspace }}" | sed "s#:\\\\#/#g" | sed "s#\\\\#/#g")
-          echo "build-output-dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
-          echo "build-src-dir=$SRC_DIR" >> "$GITHUB_OUTPUT"
+          echo "build-output-dir=$(pwd)/build" >> "$GITHUB_OUTPUT"
+          echo "build-src-dir=$(pwd)" >> "$GITHUB_OUTPUT"
 
       - name: Configure CMake
-        run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -G Ninja
-          -DCMAKE_CXX_COMPILER=clang++
-          -DCMAKE_C_COMPILER=clang
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DCMAKE_EXE_LINKER_FLAGS="-lgdi32 -luser32 -lkernel32"
-          -S ${{ steps.strings.outputs.build-src-dir }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
+            -G Ninja \
+            -DCMAKE_CXX_COMPILER="${{ steps.msys2.outputs.ucrt64bin }}/clang++.exe" \
+            -DCMAKE_C_COMPILER="${{ steps.msys2.outputs.ucrt64bin }}/clang.exe" \
+            -DCMAKE_MAKE_PROGRAM="${{ steps.msys2.outputs.ucrt64bin }}/ninja.exe" \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -S "${{ steps.strings.outputs.build-src-dir }}"
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          cmake --build "${{ steps.strings.outputs.build-output-dir }}" \
+            --config ${{ matrix.build_type }}
 
       - name: Test
-        run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --output-on-failure --build-config ${{ matrix.build_type }}
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          ctest --test-dir "${{ steps.strings.outputs.build-output-dir }}" \
+            --output-on-failure \
+            --build-config ${{ matrix.build_type }}
