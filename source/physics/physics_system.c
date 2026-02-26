@@ -351,12 +351,12 @@ void compute_collisions(game_logic *logic) {
     // &pos_i))
     //   continue;
 
-     float *radius_a = get_collision_radius(entity_a);
-   struct vec4_st *extent_a = get_collision_extent(entity_a);
+    float *radius_a = get_collision_radius(entity_a);
+    struct vec4_st *extent_a = get_collision_extent(entity_a);
     struct vec4_st *position_a = get_position(entity_a);
     struct vec4_st *prev_position_a = get_previous_position(entity_a);
     if (!prev_position_a) prev_position_a = position_a;
-    if (!radius_a||!extent_a || !position_a) continue;
+    if (!radius_a || !extent_a || !position_a || !radius_a) continue;
 
     float32x4_t min_a;
     float32x4_t max_a;
@@ -369,12 +369,12 @@ void compute_collisions(game_logic *logic) {
       struct vec4_st *extent_b = get_collision_extent(entity_b);
       struct vec4_st *position_b = get_position(entity_b);
       struct vec4_st *prev_position_b = get_previous_position(entity_b);
-      if (!prev_position_b) prev_position_b  = position_b;
-      if (!extent_b || !position_b) continue;
+      if (!prev_position_b) prev_position_b = position_b;
+      if (!extent_b || !position_b || !radius_b) continue;
 
-      if (!radii_collide(prev_position_a, position_a, prev_position_b, position_b, *radius_a, *radius_b))
+      if (!radii_collide(prev_position_a, position_a, prev_position_b, position_b, *radius_a,
+                         *radius_b))
         continue;
-                       
 
       float32x4_t min_b;
       float32x4_t max_b;

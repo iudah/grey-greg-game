@@ -10,16 +10,6 @@ COMPONENT_STREAM_DEFINE(waypoint, { struct vec4_st *waypoint; });
 
 struct vec4_st *get_waypoint(entity e) { return COMPONENT_GET(waypoint, e, waypoint); }
 
-bool set_waypoint(entity e, float x, float y, float z) {
-  struct vec4_st *waypoint = get_waypoint(e);
-  if (!waypoint) return false;
-
-  waypoint->x = x;
-  waypoint->y = y;
-  waypoint->z = z;
-  return true;
-}
-
 bool set_entity_waypoint(entity e, float x, float y, float z) {
   struct vec4_st *waypoint = get_waypoint(e);
   if (!waypoint) return false;
