@@ -5,6 +5,7 @@
 
 #include "ai_component.h"
 #include "component.h"
+#include "position_component.h"
 #include "simd.h"
 #include "systems_manager.h"
 

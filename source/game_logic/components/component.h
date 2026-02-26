@@ -68,19 +68,23 @@ static inline void *component_get_stream_ptr(struct generic_component *component
   return (uint8_t *)component->streams[stream_idx] + dense_id * element_size;
 }
 
-#define COMPONENT_GET(component, e, stream_field)                                 \
-  (__typeof__((component)->streams->stream_field + 0))component_get_stream_ptr(   \
-      (struct generic_component *)(component), (e),                               \
-      offsetof(__typeof__(*(component)->streams), stream_field) / sizeof(void *), \
-      sizeof(*(component)->streams->stream_field))
-
-#define COMPONENT_DEFINE(NAME, STRUCT_NAME)         \
+#define COMPONENT_DEFINE(NAME)                      \
+  typedef struct NAME##_streams_t NAME##_streams_t; \
+                                                    \
   struct NAME##_component {                         \
     component_set set;                              \
-    struct STRUCT_NAME *streams;                    \
+    NAME##_streams_t *streams;                      \
   };                                                \
                                                     \
   extern struct NAME##_component *NAME##_component; \
   bool initialize_##NAME##_component();
+
+#define COMPONENT_STREAM_DEFINE(NAME, STRUCT) struct NAME##_streams_t STRUCT;
+
+#define COMPONENT_GET(name, e, stream_field)                               \
+  (__typeof__(name##_component->streams->stream_field + 0))component_get_stream_ptr(   \
+      (struct generic_component *)(name##_component), (e),                             \
+      offsetof(__typeof__(*name##_component->streams), stream_field) / sizeof(void *), \
+      sizeof(*name##_component->streams->stream_field))
 
 #endif

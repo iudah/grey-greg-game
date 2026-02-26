@@ -31,29 +31,25 @@ void ppm_render() {
   else
     memset(frame, 0xff, width * height * 3);
 
-  struct vec4_st *extent = aabb_component->streams->extent;
-  entity *e = aabb_component->set.dense;
-  struct vec4_st *position = render_component->streams->interpolated_position;
-
   for (uint32_t i = 0; i < aabb_component->set.count; i++) {
-    uint32_t j;
-    if (!component_get_dense_id((struct generic_component *)position_component, e[i], &j)) continue;
+    entity entity = get_entity(aabb_component, i);
+    struct vec4_st *pos = get_position(entity);
+    struct vec4_st *coll_extent = get_collision_extent(entity);
+    struct vec4_st *color = get_color(entity);
 
-    uint32_t r_idx;
-    if (!component_get_dense_id((struct generic_component *)render_component, e[i], &r_idx))
-      continue;
+    if (!pos || !coll_extent || !color) continue;
 
-    struct vec4_st *pos = &position[j];
-    for (int64_t x = (int64_t)(pos->x - extent[i].x); x < (int64_t)(pos->x + extent[i].x); ++x) {
+    struct vec4_st extent = {coll_extent->x, coll_extent->y, 0, 0};
+    for (int64_t x = (int64_t)(pos->x - extent.x); x < (int64_t)(pos->x + extent.x); ++x) {
       if (x < 0 || x >= width) continue;
 
-      for (int64_t y = (int64_t)(pos->y - extent[i].y); y < (int64_t)(pos->y + extent[i].y); ++y) {
+      for (int64_t y = (int64_t)(pos->y - extent.y); y < (int64_t)(pos->y + extent.y); ++y) {
         if (y < 0 || y >= height) continue;
 
         char *pxl = &frame[(uint32_t)(y * width * 3 + x * 3)];
-        pxl[0] = render_component->streams->color[r_idx].x;
-        pxl[1] = render_component->streams->color[r_idx].y;
-        pxl[2] = render_component->streams->color[r_idx].z;
+        pxl[0] = color->x;
+        pxl[1] = color->y;
+        pxl[2] = color->z;
       }
     }
   }
@@ -100,10 +96,8 @@ void render_grid(game_logic *logic, grid *g) {
   }
 
   if (cache) {
-    Rectangle src = {0, 0, (float)grid_get_grid_cache(g)->texture.width,
-                     (float)-grid_get_grid_cache(g)->texture.height};
-    Rectangle dest = {0, 0, (float)grid_get_grid_cache(g)->texture.width,
-                      (float)grid_get_grid_cache(g)->texture.height};
+    Rectangle src = {0, 0, (float)cache->texture.width, (float)-cache->texture.height};
+    Rectangle dest = {0, 0, (float)cache->texture.width, (float)cache->texture.height};
     DrawTexturePro(cache->texture, src, dest, (Vector2){0, 0}, 0.0f, WHITE);
   }
 }
@@ -125,15 +119,14 @@ void raylib_render(game_logic *logic) {
     if (!component_get_dense_id((struct generic_component *)position_component, e, &pos_i))
       continue;
 
-    DrawRectangle(render_component->streams->interpolated_position[i].x -
-                      aabb_component->streams->extent[aabb_i].x,
-                  render_component->streams->interpolated_position[i].y -
-                      aabb_component->streams->extent[aabb_i].y,
-                  aabb_component->streams->extent[aabb_i].x * 2,
-                  aabb_component->streams->extent[aabb_i].y * 2,
-                  CLITERAL(Color){render_component->streams->color[i].x,
-                                  render_component->streams->color[i].y,
-                                  render_component->streams->color[i].z, 180});
+    struct vec4_st *interp_pos = get_interpolated_position(e);
+    struct vec4_st *coll_extent = get_collision_extent(e);
+    struct vec4_st *color = get_color(e);
+    if (!color || !coll_extent||!interp_pos) continue;
+
+    DrawRectangle(interp_pos->x - coll_extent->x, interp_pos->y - coll_extent->y,
+                  coll_extent->x * 2, coll_extent->y * 2,
+                  CLITERAL(Color){color->x, color->y, color->z, 180});
 #endif
   }
 }

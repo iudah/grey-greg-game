@@ -7,6 +7,8 @@
 
 struct rotation_component* rotation_component;
 
+COMPONENT_STREAM_DEFINE(rotation, { struct vec4_st *rotation; });
+
 bool initialize_rotation_component() {
   rotation_component = zcalloc(1, sizeof(struct rotation_component));
 
@@ -17,3 +19,5 @@ bool initialize_rotation_component() {
 
   return rotation_component != NULL && component_intialized;
 }
+
+

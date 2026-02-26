@@ -3,6 +3,6 @@
 
 #include "component_base.h"
 
-COMPONENT_DEFINE(scale, { struct vec4_st *scale; });
+COMPONENT_DEFINE(scale);
 
 #endif

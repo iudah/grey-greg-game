@@ -9,6 +9,13 @@
 
 struct render_component *render_component;
 
+COMPONENT_STREAM_DEFINE(render, {
+  // struct vec4_st *scale;
+  // struct vec4_st *rotation;
+  struct vec4_st *color;
+  struct vec4_st *interpolated_position;
+});
+
 bool initialize_render_component() {
   render_component = zcalloc(1, sizeof(struct render_component));
 
@@ -23,6 +30,8 @@ bool initialize_render_component() {
 
   return render_component != NULL && component_intialized;
 }
+
+struct vec4_st *get_color(entity e) { return COMPONENT_GET(render, e, color); }
 
 bool set_entity_color(entity e, uint32_t rgba) {
   if (!has_component(e, (struct generic_component *)render_component)) return false;
@@ -64,4 +73,8 @@ void interpolate_positions(float interpolation_factor) {
     // printf("Entity %i at (%g, %g, %g)\n", e.id, curr_interp_pos[i].x,
     //        curr_interp_pos[i].y, curr_interp_pos[i].z);
   }
+}
+
+struct vec4_st *get_interpolated_position(entity e) {
+  return COMPONENT_GET(render, e, interpolated_position);
 }

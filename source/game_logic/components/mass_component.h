@@ -3,10 +3,9 @@
 
 #include "component_base.h"
 
-COMPONENT_DEFINE(mass, { float *mass; });
+COMPONENT_DEFINE(mass);
 
-static inline
-float *get_mass(entity e) { return COMPONENT_GET(mass_component, e, mass); }
+bool initialize_mass_component() ;float *get_mass(entity e);
 bool set_mass(entity e, float mass);
 static inline bool set_entity_mass(entity e, float mass) { return set_mass(e, mass); }
 

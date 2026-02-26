@@ -5,6 +5,8 @@
 
 struct verlet_component* verlet_component;
 
+COMPONENT_STREAM_DEFINE(verlet, { struct vec4_st *acceleration; });
+
 bool initialize_verlet_component() {
   verlet_component = zcalloc(1, sizeof(struct verlet_component));
 

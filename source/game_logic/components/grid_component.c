@@ -5,6 +5,8 @@
 
 struct grid_component *grid_component;
 
+COMPONENT_STREAM_DEFINE(grid, { grid **map; });
+
 bool initialize_grid_component() {
   grid_component = zcalloc(1, sizeof(struct grid_component));
   auto component = (struct generic_component *)grid_component;

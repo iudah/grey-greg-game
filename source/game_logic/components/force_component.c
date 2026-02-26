@@ -6,6 +6,8 @@
 
 struct force_component *force_component;
 
+COMPONENT_STREAM_DEFINE(force, { struct vec4_st *force; });
+
 bool initialize_force_component() {
   force_component = zcalloc(1, sizeof(struct force_component));
 
@@ -15,6 +17,12 @@ bool initialize_force_component() {
                            sizeof(*force_component->streams) / sizeof(void *));
 
   return force_component != NULL && component_intialized;
+}
+
+struct vec4_st *get_force(entity e) { return COMPONENT_GET(force, e, force); }
+
+ bool add_force(entity e, float *force) {
+  return apply_force(e, force[0], force[1], force[2]);
 }
 
 bool apply_force(entity e, float fx, float fy, float fz) {

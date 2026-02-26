@@ -336,44 +336,50 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
 }
 
 void compute_collisions(game_logic *logic) {
-  float *radii = aabb_component->streams->collision_radius;
-  struct vec4_st *extents = aabb_component->streams->collision_extent;
-  struct vec4_st *physix_positions = position_component->streams->position;
-  struct vec4_st *physix_previous_positions = position_component->streams->previous_position;
+  // float *radii = aabb_component->streams->collision_radius;
+  // struct vec4_st *extents = aabb_component->streams->collision_extent;
+  // struct vec4_st *physix_positions = position_component->streams->position;
+  // struct vec4_st *physix_previous_positions = position_component->streams->previous_position;
 
-  if (!physix_previous_positions) physix_previous_positions = physix_positions;
+  // if (!physix_previous_positions) physix_previous_positions = physix_positions;
 
   for (uint32_t aabb_i = 0; aabb_i < aabb_component->set.count; ++aabb_i) {
-    entity entity_a = aabb_component->set.dense[aabb_i];
-    uint32_t pos_i;
+    entity entity_a = get_entity(aabb_component, aabb_i);
+    // uint32_t pos_i;
 
-    if (!component_get_dense_id((struct generic_component *)position_component, entity_a, &pos_i))
-      continue;
+    // if (!component_get_dense_id((struct generic_component *)position_component, entity_a,
+    // &pos_i))
+    //   continue;
+
+     float *radius_a = get_collision_radius(entity_a);
+   struct vec4_st *extent_a = get_collision_extent(entity_a);
+    struct vec4_st *position_a = get_position(entity_a);
+    struct vec4_st *prev_position_a = get_previous_position(entity_a);
+    if (!prev_position_a) prev_position_a = position_a;
+    if (!radius_a||!extent_a || !position_a) continue;
 
     float32x4_t min_a;
     float32x4_t max_a;
-    compute_swept_aabb_box(&physix_positions[pos_i],
-                           physix_previous_positions ? &physix_previous_positions[pos_i] : NULL,
-                           &extents[aabb_i], &min_a, &max_a);
+    compute_swept_aabb_box(position_a, prev_position_a, extent_a, &min_a, &max_a);
 
     for (uint32_t aabb_j = aabb_i + 1; aabb_j < aabb_component->set.count; ++aabb_j) {
-      entity entity_b = aabb_component->set.dense[aabb_j];
-      uint32_t pos_j;
+      entity entity_b = get_entity(aabb_component, aabb_j);
 
-      if (!component_get_dense_id((struct generic_component *)position_component, entity_b, &pos_j))
-        continue;
+      float *radius_b = get_collision_radius(entity_b);
+      struct vec4_st *extent_b = get_collision_extent(entity_b);
+      struct vec4_st *position_b = get_position(entity_b);
+      struct vec4_st *prev_position_b = get_previous_position(entity_b);
+      if (!prev_position_b) prev_position_b  = position_b;
+      if (!extent_b || !position_b) continue;
 
-      if (!radii_collide(physix_previous_positions + pos_i, physix_positions + pos_i,
-                         physix_previous_positions + pos_j, physix_positions + pos_j, radii[aabb_i],
-                         radii[aabb_j]))
+      if (!radii_collide(prev_position_a, position_a, prev_position_b, position_b, *radius_a, *radius_b))
         continue;
+                       
 
       float32x4_t min_b;
       float32x4_t max_b;
 
-      compute_swept_aabb_box(&physix_positions[pos_j],
-                             physix_previous_positions ? &physix_previous_positions[pos_j] : NULL,
-                             &extents[aabb_j], &min_b, &max_b);
+      compute_swept_aabb_box(position_b, prev_position_b, extent_b, &min_b, &max_b);
 
       if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
         resolve_collision(logic, entity_a, entity_b);
@@ -442,17 +448,6 @@ bool walk_through_resolution(event *e) {
   collision_data *data = e->info;
 
   return resolve_walkthrough(data->a, data->b);
-}
-
-bool set_entity_waypoint(entity e, float x, float y, float z) {
-  struct vec4_st *waypoint = get_waypoint(e);
-  if (!waypoint) return false;
-
-  waypoint->x = x;
-  waypoint->y = y;
-  waypoint->z = z;
-
-  return true;
 }
 
 bool set_entity_aabb_lim(entity e, float x, float y, float z) {

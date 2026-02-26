@@ -3,11 +3,7 @@
 
 #include "component.h"
 
-struct rotation_component {
-  component_set set;
-  struct {
-    struct vec4_st *rotation;
-  } *streams;
-};
+COMPONENT_DEFINE(rotation);
+bool initialize_rotation_component() ;
 
 #endif

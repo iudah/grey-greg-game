@@ -5,6 +5,10 @@
 
 struct velocity_component *velocity_component;
 
+
+COMPONENT_STREAM_DEFINE(velocity, { 
+  struct vec4_st *velocity; });
+
 bool initialize_velocity_component() {
   velocity_component = zcalloc(1, sizeof(struct velocity_component));
 
@@ -21,6 +25,14 @@ bool initialize_velocity_component() {
 
   return velocity_component != NULL && component_intialized;
 }
+
+bool set_entity_velocity(entity e, float x, float y, float z) {
+  return set_velocity(e, (float[]){x, y, z});
+}
+ struct vec4_st *get_velocity(entity e) {
+  return COMPONENT_GET(velocity, e, velocity);
+}
+
 
 bool set_euler_velocity(entity e, float *vel) {
   struct vec4_st *velocity = get_velocity(e);

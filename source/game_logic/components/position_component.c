@@ -2,8 +2,16 @@
 
 #include <simd.h>
 #include <zot.h>
+#include <string.h>
 
 struct position_component *position_component;
+
+COMPONENT_STREAM_DEFINE(position, {
+  struct vec4_st *position;
+  struct vec4_st *previous_position;
+  // struct vec4_st *curr_interp_position;
+  // struct vec4_st *prev_interp_position;
+}); 
 
 bool initialize_position_component() {
   position_component = zcalloc(1, sizeof(struct position_component));
@@ -27,6 +35,19 @@ bool initialize_position_component() {
 
   return position_component != NULL && component_intialized;
 }
+
+ bool set_entity_position(entity e, float x, float y, float z) {
+  return set_position(e, (float[]){x, y, z});
+}
+
+struct vec4_st *get_position(entity e) {
+  return COMPONENT_GET(position, e, position);
+}
+struct vec4_st *get_previous_position(entity e) {
+  return COMPONENT_GET(position, e, previous_position);
+}
+
+
 
 bool set_position(entity e, float *position) {
   float x = position[0];

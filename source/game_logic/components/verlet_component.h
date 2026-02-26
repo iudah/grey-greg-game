@@ -1,10 +1,8 @@
 #ifndef VERLET_COMPONENTS_H
 #define VERLET_COMPONENTS_H
 
-#include "component.h"
+#include "component_base.h"
 
-COMPONENT_DEFINE(verlet, {
-  struct vec4_st  *acceleration;
-});
+COMPONENT_DEFINE(verlet);
 
 #endif

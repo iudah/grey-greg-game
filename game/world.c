@@ -93,20 +93,24 @@ bool player_movement(event *e) {
 #ifndef NO_RAYLIB
 #define XY_ACCEL 40.f
 #define JUMP     140.f
+     float *mass = get_mass(player);
+   if (!mass) return false;
+    
   if (e->type == KEY_DOWN_EVENT) {
+
     switch (*(KeyboardKey *)e->info) {
       case KEY_UP: {
-        add_force(player, (float[]){0, -JUMP * get_mass(player), 0, 0});
+        add_force(player, (float[]){0, -JUMP * *mass, 0, 0});
         DrawText("UP", 160, 160, 240, RED);
         LOG("UP");
       } break;
 
       case KEY_LEFT:
-        add_force(player, (float[]){-XY_ACCEL * get_mass(player), 0, 0, 0});
+        add_force(player, (float[]){-XY_ACCEL * *mass, 0, 0, 0});
         break;
 
       case KEY_RIGHT:
-        add_force(player, (float[]){XY_ACCEL * get_mass(player), 0, 0, 0});
+        add_force(player, (float[]){XY_ACCEL * *mass, 0, 0, 0});
         break;
 
       default:
@@ -125,7 +129,7 @@ bool player_movement(event *e) {
       case KEY_LEFT:
       case KEY_RIGHT:
         add_force(player,
-                  (float[]){-get_velocity(player)->x / TIMESTEP / FORCE_SCALE * get_mass(player), 0,
+                  (float[]){-get_velocity(player)->x / TIMESTEP /  *mass, 0,
                             0, 0});
         break;
 

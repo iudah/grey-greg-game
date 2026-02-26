@@ -9,17 +9,10 @@
 #define SCREEN_X get_screen_width()
 #define SCREEN_Y get_screen_height()
 
-COMPONENT_DEFINE(render, {
-  // struct vec4_st *scale;
-  // struct vec4_st *rotation;
-  struct vec4_st *color;
-  struct vec4_st *interpolated_position;
-});
-
-static inline struct vec4_st *get_color(entity e) {
-  return COMPONENT_GET(render_component, e, color);
-}
-
+COMPONENT_DEFINE(render);
+bool initialize_render_component();
+struct vec4_st *get_color(entity e) ;
 bool set_entity_color(entity e, uint32_t rgba);
+struct vec4_st *get_interpolated_position(entity e) ;
 
 #endif
