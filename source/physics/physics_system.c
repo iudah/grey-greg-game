@@ -365,6 +365,8 @@ void compute_collisions(game_logic *logic) {
     for (uint32_t aabb_j = aabb_i + 1; aabb_j < aabb_component->set.count; ++aabb_j) {
       entity entity_b = get_entity(aabb_component, aabb_j);
 
+      if(!belong_to_same_collision_layer(entity_a, entity_b)) continue;
+
       float *radius_b = get_collision_radius(entity_b);
       struct vec4_st *extent_b = get_collision_extent(entity_b);
       struct vec4_st *position_b = get_position(entity_b);

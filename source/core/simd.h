@@ -1,6 +1,8 @@
 #ifndef SIMD_H
 #define SIMD_H
 
+#include <entity.h>
+
 #if defined(__ARM_NEON__)
 #include <arm_neon.h>
 #include <game_logic.h>

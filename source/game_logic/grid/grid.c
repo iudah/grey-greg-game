@@ -96,6 +96,8 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
 
         set_entity_position(platform, center_x, center_y, 0);
         set_entity_aabb_lim(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
+        set_entity_collision_layer(platform, COLLISION_LAYER_TERRAIN);
+        set_entity_collision_mask(platform, COLLISION_LAYER_PLAYER | COLLISION_LAYER_NPC);
 
         set_entity_color(platform, (irand() % 255) << 16 | (irand() % 255) << 8 | (irand() % 255));
       }

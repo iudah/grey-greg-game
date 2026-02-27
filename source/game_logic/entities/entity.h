@@ -24,4 +24,6 @@ void detach_position_component(entity e);
 void attach_velocity_component(entity e);
 void detach_velocity_component(entity e);
 
+bool is_same_entity(entity e1, entity e2);
+
 #endif

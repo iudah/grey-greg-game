@@ -31,8 +31,6 @@ typedef struct generic_component generic_component_t;
 
 typedef bool (*set_entity_component_value_fn)(entity e, ...);
 
-bool set_entity_aabb_lim(entity e, float x, float y, float z);
-bool set_entity_waypoint(entity e, float x, float y, float z);
 
 bool attach_component(entity e, struct generic_component *component);
 void detach_component(entity e, struct generic_component *component);

@@ -70,3 +70,8 @@ void destroy_entity(entity e) {
   entity_registry[e.id].generation++;
   entity_registry[e.id].active = false;
 }
+
+bool is_same_entity(entity e1, entity e2){
+  return e1.id == e2.id && e1.generation == e2.generation;
+}
+
