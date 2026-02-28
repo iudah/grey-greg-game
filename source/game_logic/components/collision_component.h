@@ -15,5 +15,8 @@ bool set_entity_collision_extent(entity e, float x, float y, float z);
 bool set_entity_collision_layer(entity e, uint32_t layer);
 bool set_entity_collision_mask(entity e, uint32_t mask);
 bool set_collision_spatial_dirty(entity e, bool dirty);
+bool perform_collision_sweep_and_prune();
 bool belong_to_same_collision_layer(entity e1, entity e2);
+const entity *get_collision_sorted_entity();
+const float *get_collision_sorted_min_x();
 #endif

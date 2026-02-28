@@ -131,6 +131,7 @@ void verlet_integration_method()
 void physics_system_update(game_logic *logic, float delta_time) {
   euler_method();
   update_spatial_partition();
+  perform_collision_sweep_and_prune();
   compute_collisions(logic);
 }
 
@@ -337,20 +338,11 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
 }
 
 void compute_collisions(game_logic *logic) {
-  // float *radii = collision_component->streams->collision_radius;
-  // struct vec4_st *extents = collision_component->streams->collision_extent;
-  // struct vec4_st *physix_positions = position_component->streams->position;
-  // struct vec4_st *physix_previous_positions = position_component->streams->previous_position;
-
-  // if (!physix_previous_positions) physix_previous_positions = physix_positions;
+  const entity *collision_sorted_entities = get_collision_sorted_entity();
+  const float *min_xs = get_collision_sorted_min_x();
 
   for (uint32_t collision_i = 0; collision_i < collision_component->set.count; ++collision_i) {
-    entity entity_a = get_entity(collision_component, collision_i);
-    // uint32_t pos_i;
-
-    // if (!component_get_dense_id((struct generic_component *)position_component, entity_a,
-    // &pos_i))
-    //   continue;
+    entity entity_a = collision_sorted_entities[collision_i];
 
     float *radius_a = get_collision_radius(entity_a);
     struct vec4_st *extent_a = get_collision_extent(entity_a);
@@ -362,10 +354,14 @@ void compute_collisions(game_logic *logic) {
     float32x4_t min_a;
     float32x4_t max_a;
     compute_swept_collision_box(position_a, prev_position_a, extent_a, &min_a, &max_a);
+    float max_x_a = vgetq_lane_f32(max_a, 0);
 
     for (uint32_t collision_j = collision_i + 1; collision_j < collision_component->set.count;
          ++collision_j) {
-      entity entity_b = get_entity(collision_component, collision_j);
+      if (min_xs[collision_j] > max_x_a)
+        break;  // Entity B fall out of collision range of Entity A, skip further checks
+
+      entity entity_b = collision_sorted_entities[collision_j];
 
       if (!belong_to_same_collision_layer(entity_a, entity_b)) continue;
 

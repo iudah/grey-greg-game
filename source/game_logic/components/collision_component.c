@@ -18,6 +18,7 @@ COMPONENT_STREAM_DEFINE(collision, {
   uint32_t *collision_layer;
   uint32_t *collision_mask;
   entity *sorted_entities;
+  float *min_xs;
   bool *spatial_dirty;
 });
 
@@ -32,6 +33,7 @@ bool initialize_collision_component() {
                                         sizeof(*collision_component->streams->collision_layer),
                                         sizeof(*collision_component->streams->collision_mask),
                                         sizeof(*collision_component->streams->sorted_entities),
+                                        sizeof(*collision_component->streams->min_xs),
                                         sizeof(*collision_component->streams->spatial_dirty)},
                            sizeof(*collision_component->streams) / sizeof(void *));
 
@@ -73,8 +75,10 @@ bool belong_to_same_collision_layer(entity e1, entity e2) {
 bool perform_collision_sweep_and_prune() {
   memset(collision_component->streams->sorted_entities, 0,
          collision_component->set.count * sizeof(entity));
+  memset(collision_component->streams->min_xs, 0, collision_component->set.count * sizeof(float));
 
-  float *min_xs = zcalloc(collision_component->set.count, sizeof(float));
+  float *min_xs = collision_component->streams->min_xs;
+
   if (!min_xs) return false;
 
   uint32_t sorted_count = 0;
@@ -117,15 +121,19 @@ bool perform_collision_sweep_and_prune() {
                 (sorted_count - top) * sizeof(entity));
         min_xs[top] = min_x;
         collision_component->streams->sorted_entities[top] = e;
-        register_to_spatial_partition(e);
       }
     }
 
     sorted_count++;
   }
-  zfree(min_xs);
   return true;
 }
+
+const entity *get_collision_sorted_entity() {
+  return collision_component->streams->sorted_entities;
+}
+
+const float *get_collision_sorted_min_x() { return collision_component->streams->min_xs; }
 
 bool set_entity_collision_extent(entity e, float x, float y, float z) {
   struct vec4_st *collision_extent = get_collision_extent(e);
