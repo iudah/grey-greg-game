@@ -1,12 +1,10 @@
 #ifndef INPUT_SYSTEM_H
 #define INPUT_SYSTEM_H
 
+#include <grey_constants.h>
 #include <game_logic.h>
 #include <raylib_glue.h>
 #ifdef RAYLIB_H
-typedef enum { PAD_A, PAD_X, PAD_B, PAD_O, PAD_COUNT } PadIndex;
-typedef enum { STICK_KNOB, STICK_BASE, STICK_COUNT } StickIndex;
-
 typedef struct Circle {
   float x;
   float y;

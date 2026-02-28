@@ -2,9 +2,8 @@
 #define AI_COMPONENT_H
 
 #include "component_base.h"
+#include <grey_constants.h>
 
-typedef enum ai_state_enum ai_state;
-enum ai_state_enum { AI_IDLE, AI_PATROL, AI_CHASE, AI_ATTACK, AI_FLEE };
 
 COMPONENT_DEFINE(ai);
 

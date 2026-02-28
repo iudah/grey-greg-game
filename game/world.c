@@ -1,5 +1,5 @@
-#include <collision_component.h>
 #include <actor.h>
+#include <collision_component.h>
 #include <force_component.h>
 #include <game_logic.h>
 #include <game_main.h>
@@ -25,9 +25,6 @@
 
 typedef struct generic_component generic_component_t;
 
-#define SPRITE_X 8
-#define SPRITE_Y 8
-
 entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   entity e = create_entity();
 
@@ -36,7 +33,7 @@ entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   actor_add_component(e, (generic_component_t *)render_component);
 
   set_entity_position(e, pos_x, pos_y, 0);
-  set_entity_collision_lim(e, SPRITE_X, SPRITE_Y, 0);
+  set_entity_collision_extent(e, SPRITE_X, SPRITE_Y, 0);
 
   set_entity_color(e, rgba);
 
@@ -91,13 +88,10 @@ bool game_append_sprite(entity e) {
 
 bool player_movement(event *e) {
 #ifndef NO_RAYLIB
-#define XY_ACCEL 40.f
-#define JUMP     140.f
-     float *mass = get_mass(player);
-   if (!mass) return false;
-    
-  if (e->type == KEY_DOWN_EVENT) {
+  float *mass = get_mass(player);
+  if (!mass) return false;
 
+  if (e->type == KEY_DOWN_EVENT) {
     switch (*(KeyboardKey *)e->info) {
       case KEY_UP: {
         add_force(player, (float[]){0, -JUMP * *mass, 0, 0});
@@ -128,9 +122,7 @@ bool player_movement(event *e) {
 
       case KEY_LEFT:
       case KEY_RIGHT:
-        add_force(player,
-                  (float[]){-get_velocity(player)->x / TIMESTEP /  *mass, 0,
-                            0, 0});
+        add_force(player, (float[]){-get_velocity(player)->x / TIMESTEP / *mass, 0, 0, 0});
         break;
 
       default:

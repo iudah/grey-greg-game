@@ -7,7 +7,6 @@
 
 typedef struct game_logic game_logic;
 
-extern bool is_2d;
 
 void use_2d();
 void interpolate_positions(float interpolation_factor);

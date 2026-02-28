@@ -10,6 +10,7 @@
 
 #include <game_logic.h>
 #include <game_view.h>
+#include <grey_constants.h>
 #include <human_view.h>
 #include <input_system.h>
 #include <raylib_glue.h>
@@ -47,12 +48,12 @@ static inline void register_interrupt_signal_handler();
 static inline bool get_time_now(ztimespec *ts);
 static inline double compute_lapsed_time();
 
-bool is_2d = false;
+bool _is_2d = false;
 
 bool quit = false;
 ztimespec iter_start, iter_end;
 
-void use_2d() { is_2d = true; }
+void use_2d() { _is_2d = true; }
 
 static struct {
   char *title;

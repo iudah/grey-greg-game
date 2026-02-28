@@ -9,6 +9,5 @@ struct vec4_st *get_previous_position(entity e) ;
 bool set_position(entity e, float *position);
 bool set_entity_position(entity e, float x, float y, float z) ;
 bool initialize_position_component();
-bool snapshot_positions();
 
 #endif

@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <zot.h>  //a custom memory manager
+#include <grey_constants.h>
 
 #ifdef _WIN32
 #include <windows.h>

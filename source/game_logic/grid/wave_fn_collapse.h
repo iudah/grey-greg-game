@@ -1,22 +1,12 @@
 #ifndef WAVE_FN_COLLAPSE_H
 #define WAVE_FN_COLLAPSE_H
+#include <grey_constants.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "grid.h"
 typedef struct wfc_tile wfc_tile;
 typedef struct wfc_atlas wfc_atlas;
-typedef enum {
-  NORTH,
-  EAST,
-  SOUTH,
-  WEST,
-  NORTH_EAST,
-  SOUTH_EAST,
-  SOUTH_WEST,
-  NORTH_WEST,
-  N_DIRECTION
-} wfc_direction;
 
 struct wfc_state {
   struct wfc_slot *cell;

@@ -1,8 +1,10 @@
 #include "position_component.h"
 
 #include <simd.h>
-#include <zot.h>
 #include <string.h>
+#include <zot.h>
+
+#include "collision_component.h"
 
 struct position_component *position_component;
 
@@ -11,7 +13,7 @@ COMPONENT_STREAM_DEFINE(position, {
   struct vec4_st *previous_position;
   // struct vec4_st *curr_interp_position;
   // struct vec4_st *prev_interp_position;
-}); 
+});
 
 bool initialize_position_component() {
   position_component = zcalloc(1, sizeof(struct position_component));
@@ -36,19 +38,13 @@ bool initialize_position_component() {
   return position_component != NULL && component_intialized;
 }
 
- bool set_entity_position(entity e, float x, float y, float z) {
-  return set_position(e, (float[]){x, y, z});
-}
-
-struct vec4_st *get_position(entity e) {
-  return COMPONENT_GET(position, e, position);
-}
+struct vec4_st *get_position(entity e) { return COMPONENT_GET(position, e, position); }
 struct vec4_st *get_previous_position(entity e) {
   return COMPONENT_GET(position, e, previous_position);
 }
-
-
-
+bool set_entity_position(entity e, float x, float y, float z) {
+  return set_position(e, (float[]){x, y, z});
+}
 bool set_position(entity e, float *position) {
   float x = position[0];
   float y = position[1];
@@ -61,28 +57,17 @@ bool set_position(entity e, float *position) {
     return false;
   }
 
+  prev_pos->x = pos->x;
+  prev_pos->y = pos->y;
+  prev_pos->z = pos->z;
+
   pos->x = x;
   pos->y = y;
   pos->z = z;
 
-  prev_pos->x = x;
-  prev_pos->y = y;
-  prev_pos->z = z;
+  set_collision_spatial_dirty(e, true);
 
   return true;
 }
 
-bool snapshot_positions () {
-  if (!position_component->streams->position || !position_component->streams->previous_position) {
-    return false;
-  }
 
-  auto prev_pos = position_component->streams->previous_position;
-  auto pos = position_component->streams->position;
-
-  assert(position_component->set.count <= position_component->set.dense_capacity);
-
-  memcpy(prev_pos, pos, position_component->set.count * sizeof(*prev_pos));
-
-  return true;
-}

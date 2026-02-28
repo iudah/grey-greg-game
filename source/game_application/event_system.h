@@ -3,8 +3,6 @@
 
 #include "entity.h"
 
-#define MAX_EVENT 63555
-
 typedef enum {
   NO_EVENT,
   COLLISION_EVENT,

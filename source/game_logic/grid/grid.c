@@ -1,7 +1,7 @@
 #include "grid.h"
 
-#include <collision_component.h>
 #include <actor.h>
+#include <collision_component.h>
 #include <irand.h>
 #include <position_component.h>
 #include <raylib_glue.h>
@@ -95,7 +95,7 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
         float center_y = ((float)y * tile_h) + ((float)tile_h / 2.0f);
 
         set_entity_position(platform, center_x, center_y, 0);
-        set_entity_collision_lim(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
+        set_entity_collision_extent(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
         set_entity_collision_layer(platform, COLLISION_LAYER_TERRAIN);
         set_entity_collision_mask(platform, COLLISION_LAYER_PLAYER | COLLISION_LAYER_NPC);
 

@@ -42,23 +42,42 @@ bool clear_spatial_partition() {
 
 bool add_entity_to_cell(uint32_t cell_hash, entity e) {
   if (!cell_list[cell_hash].entities) {
-    cell_list[cell_hash].entities = zcalloc(32, sizeof(entity));
-  } else if ((cell_list[cell_hash].count & 31) == 0) {
+    cell_list[cell_hash].entities = zcalloc(CELL_GROW_STEP, sizeof(entity));
+  } else if ((cell_list[cell_hash].count & CELL_GROW_MASK) == 0) {
     // Resize the entities array if needed
     cell_list[cell_hash].entities =
-        zrealloc(cell_list[cell_hash].entities, (cell_list[cell_hash].count + 10) * sizeof(entity));
+        zrealloc(cell_list[cell_hash].entities,
+                 (cell_list[cell_hash].count + CELL_GROW_STEP) * sizeof(entity));
   }
   if (!cell_list[cell_hash].entities) return false;
   cell_list[cell_hash].entities[cell_list[cell_hash].count++] = e;
   return true;
 }
+bool remove_entity_from_cell(uint32_t cell_hash, entity e) {
+  if (!cell_list[cell_hash].entities) {
+    return false;
+  }
+  if (!cell_list[cell_hash].count) {
+    return false;
+  }
 
-bool register_to_spatial_partition(entity e) {
-  struct vec4_st *position = get_position(e);
-  struct vec4_st *extent = get_collision_extent(e);
+  for (uint32_t i = 0; i < cell_list[cell_hash].count; ++i) {
+    if (is_same_entity(cell_list[cell_hash].entities[i], e)) {
+      memmove(&cell_list[cell_hash].entities[i], &cell_list[cell_hash].entities[i + 1],
+              (cell_list[cell_hash].count - i - 1) * sizeof(entity));
+      cell_list[cell_hash].count--;
+      return true;
+    }
+  }
+  return false;
+}
 
-  if (!position || !extent) return false;
+struct cell_coord {
+  int32_t x, y, z, unused;
+};
 
+bool compute_min_max_cell(entity e, struct vec4_st *position, struct vec4_st *extent,
+                          struct cell_coord *min_cell, struct cell_coord *max_cell) {
   // Register entity to spatial partition grid based on position and extent
   float32x4_t pos = vld1q_f32((float *)position);
   float32x4_t ext = vld1q_f32((float *)extent);
@@ -84,19 +103,28 @@ bool register_to_spatial_partition(entity e) {
   min_s = vsubq_s32(min_s, vandq_s32(vreinterpretq_s32_u32(min_neg), vdupq_n_s32(1)));
   max_s = vsubq_s32(max_s, vandq_s32(vreinterpretq_s32_u32(max_neg), vdupq_n_s32(1)));
 
-  struct cell_coord {
-    int32_t x, y, z, unused;
-  };
-  struct cell_coord min_cell = {0};
-  struct cell_coord max_cell = {0};
-  vst1q_s32((int32_t *)&min_cell, min_s);
-  vst1q_s32((int32_t *)&max_cell, max_s);
+  vst1q_s32((int32_t *)min_cell, min_s);
+  vst1q_s32((int32_t *)max_cell, max_s);
 
-  if (is_2d) {
-    min_cell.z = 0;
-    max_cell.z = 0;
+  if (grey_is_2d()) {
+    min_cell->z = 0;
+    max_cell->z = 0;
   }
 
+  return true;
+}
+
+bool register_to_spatial_partition(entity e) {
+  struct vec4_st *position = get_position(e);
+  struct vec4_st *extent = get_collision_extent(e);
+
+  if (!position || !extent) return false;
+
+  struct cell_coord min_cell = {0};
+  struct cell_coord max_cell = {0};
+  if (!compute_min_max_cell(e, position, extent, &min_cell, &max_cell)) {
+    return false;
+  }
   for (int32_t x = min_cell.x; x <= max_cell.x; ++x) {
     for (int32_t y = min_cell.y; y <= max_cell.y; ++y) {
       for (int32_t z = min_cell.z; z <= max_cell.z; ++z) {
@@ -106,5 +134,42 @@ bool register_to_spatial_partition(entity e) {
     }
   }
 
+  return true;
+}
+
+bool deregister_from_spatial_partition_if_registered(entity e) {
+  struct vec4_st *position = get_prev_position(e);
+  struct vec4_st *extent = get_collision_extent(e);
+
+  if (!position || !extent) return false;
+
+  struct cell_coord min_cell = {0};
+  struct cell_coord max_cell = {0};
+  if (!compute_min_max_cell(e, position, extent, &min_cell, &max_cell)) {
+    return false;
+  }
+  for (int32_t x = min_cell.x; x <= max_cell.x; ++x) {
+    for (int32_t y = min_cell.y; y <= max_cell.y; ++y) {
+      for (int32_t z = min_cell.z; z <= max_cell.z; ++z) {
+        uint32_t cell_hash = hash_cell_coordinates(x, y, z, GREY_TABLE_SIZE);
+        remove_entity_from_cell(cell_hash, e);
+      }
+    }
+  }
+
+  return true;
+}
+
+bool update_spatial_partition() {
+  for (uint32_t i = 0; i < collision_component->set.count; ++i) {
+    entity e = get_entity(collision_component, i);
+    bool *dirty = get_collision_spatial_dirty(e);
+
+    if (!dirty || !*dirty) continue;
+
+    deregister_from_spatial_partition_if_registered(e);
+    register_to_spatial_partition(e);
+    *dirty = false;
+  }
   return true;
 }

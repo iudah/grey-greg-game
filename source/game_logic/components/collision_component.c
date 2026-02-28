@@ -18,6 +18,7 @@ COMPONENT_STREAM_DEFINE(collision, {
   uint32_t *collision_layer;
   uint32_t *collision_mask;
   entity *sorted_entities;
+  bool *spatial_dirty;
 });
 
 bool initialize_collision_component() {
@@ -30,7 +31,8 @@ bool initialize_collision_component() {
                                         sizeof(*collision_component->streams->collision_radius),
                                         sizeof(*collision_component->streams->collision_layer),
                                         sizeof(*collision_component->streams->collision_mask),
-                                        sizeof(*collision_component->streams->sorted_entities)},
+                                        sizeof(*collision_component->streams->sorted_entities),
+                                        sizeof(*collision_component->streams->spatial_dirty)},
                            sizeof(*collision_component->streams) / sizeof(void *));
 
   return collision_component != NULL && component_intialized;
@@ -122,5 +124,33 @@ bool perform_collision_sweep_and_prune() {
     sorted_count++;
   }
   zfree(min_xs);
+  return true;
+}
+
+bool set_entity_collision_extent(entity e, float x, float y, float z) {
+  struct vec4_st *collision_extent = get_collision_extent(e);
+  float *collision_radius = get_collision_radius(e);
+
+  if (!collision_extent || !collision_radius) return false;
+
+  // half extents
+  collision_extent->x = x;
+  collision_extent->y = y;
+  collision_extent->z = z;
+
+  *collision_radius = sqrtf(x * x + y * y + z * z);
+
+  set_collision_spatial_dirty(e, true);
+
+  return true;
+}
+
+bool *get_collision_spatial_dirty(entity e) { return COMPONENT_GET(collision, e, spatial_dirty); }
+
+bool set_collision_spatial_dirty(entity e, bool dirty) {
+  bool *dirty_ptr = COMPONENT_GET(collision, e, spatial_dirty);
+  if (!dirty_ptr) return false;
+
+  *dirty_ptr = dirty;
   return true;
 }
