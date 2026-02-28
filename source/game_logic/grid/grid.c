@@ -1,6 +1,6 @@
 #include "grid.h"
 
-#include <aabb_component.h>
+#include <collision_component.h>
 #include <actor.h>
 #include <irand.h>
 #include <position_component.h>
@@ -85,7 +85,7 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
         entity platform = create_entity();
 
         actor_add_component(platform, (generic_component_t *)position_component);
-        actor_add_component(platform, (generic_component_t *)aabb_component);
+        actor_add_component(platform, (generic_component_t *)collision_component);
         actor_add_component(platform, (generic_component_t *)render_component);
 
         uint32_t tile_w = resource_get_tile_rect(resc_mgr, cell->tile_text_id)->width;
@@ -95,7 +95,7 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
         float center_y = ((float)y * tile_h) + ((float)tile_h / 2.0f);
 
         set_entity_position(platform, center_x, center_y, 0);
-        set_entity_aabb_lim(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
+        set_entity_collision_lim(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
         set_entity_collision_layer(platform, COLLISION_LAYER_TERRAIN);
         set_entity_collision_mask(platform, COLLISION_LAYER_PLAYER | COLLISION_LAYER_NPC);
 

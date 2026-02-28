@@ -2,7 +2,7 @@
 
 #include <zot.h>
 
-#include "aabb_component.h"
+#include "collision_component.h"
 #include "force_component.h"
 #include "mass_component.h"
 #include "position_component.h"

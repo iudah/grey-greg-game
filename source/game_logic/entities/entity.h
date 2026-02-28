@@ -4,9 +4,10 @@
 #include <stdint.h>
 
 #define GREY_ZERO     (1e-5f)
-#define GREY_AABB_GAP (GREY_ZERO * 1e2f)
+#define GREY_COLLISION_GAP (GREY_ZERO * 1e2f)
 
 #define INITIAL_CAPACITY (8)
+#define GREY_TILE_SIZE   (16)
 
 typedef struct {
   uint32_t id : 24;

@@ -6,7 +6,8 @@ set(HEADER_FILES
     game_application/event_system.h
     game_application/game_main.h
     game_application/input_system.h
-    game_logic/components/aabb_component.h
+    game_logic/components/collision_component.h
+    game_logic/components/collision_spatial_hash.h
     game_logic/components/ai_component.h
     game_logic/components/component.h
     game_logic/components/component_base.h

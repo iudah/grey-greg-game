@@ -1,4 +1,4 @@
-#include <aabb_component.h>
+#include <collision_component.h>
 #include <actor.h>
 #include <force_component.h>
 #include <game_logic.h>
@@ -32,11 +32,11 @@ entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   entity e = create_entity();
 
   actor_add_component(e, (generic_component_t *)position_component);
-  actor_add_component(e, (generic_component_t *)aabb_component);
+  actor_add_component(e, (generic_component_t *)collision_component);
   actor_add_component(e, (generic_component_t *)render_component);
 
   set_entity_position(e, pos_x, pos_y, 0);
-  set_entity_aabb_lim(e, SPRITE_X, SPRITE_Y, 0);
+  set_entity_collision_lim(e, SPRITE_X, SPRITE_Y, 0);
 
   set_entity_color(e, rgba);
 
@@ -162,7 +162,7 @@ void init_world(game_logic *logic) {
 
   resource_manager *resc_mgr = game_logic_get_resource_manager(logic);
 
-  const int tile_size = 16;
+  const int tile_size = GREY_TILE_SIZE;
   uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tile_set.png");
   SetTextureFilter(resource_get_texture(resc_mgr, world_tile_set), TEXTURE_FILTER_POINT);
 

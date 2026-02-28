@@ -10,7 +10,7 @@
 #include <string.h>
 #include <zot.h>
 
-#include "aabb_component.h"
+#include "collision_component.h"
 #include "component.h"
 #include "entity.h"
 #include "grid_component.h"
@@ -31,8 +31,8 @@ void ppm_render() {
   else
     memset(frame, 0xff, width * height * 3);
 
-  for (uint32_t i = 0; i < aabb_component->set.count; i++) {
-    entity entity = get_entity(aabb_component, i);
+  for (uint32_t i = 0; i < collision_component->set.count; i++) {
+    entity entity = get_entity(collision_component, i);
     struct vec4_st *pos = get_position(entity);
     struct vec4_st *coll_extent = get_collision_extent(entity);
     struct vec4_st *color = get_color(entity);
@@ -112,8 +112,8 @@ void raylib_render(game_logic *logic) {
     }
 
 #if 1
-    uint32_t aabb_i;
-    if (!component_get_dense_id((struct generic_component *)aabb_component, e, &aabb_i)) continue;
+    uint32_t collision_i;
+    if (!component_get_dense_id((struct generic_component *)collision_component, e, &collision_i)) continue;
 
     uint32_t pos_i;
     if (!component_get_dense_id((struct generic_component *)position_component, e, &pos_i))

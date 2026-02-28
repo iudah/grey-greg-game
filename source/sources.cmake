@@ -5,7 +5,8 @@ set(SOURCE_FILES
     game_application/event_system.c
     game_application/game_main.c
     game_application/input_system.c
-    game_logic/components/aabb_component.c
+    game_logic/components/collision_component.c
+    game_logic/components/collision_spatial_hash.c
     game_logic/components/ai_component.c
     game_logic/components/component.c
     game_logic/components/component_manager.c

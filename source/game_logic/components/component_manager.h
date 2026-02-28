@@ -1,7 +1,7 @@
 #ifndef COMPONENTS_MANAGER_H
 #define COMPONENTS_MANAGER_H
 
-#include "aabb_component.h"
+#include "collision_component.h"
 #include "position_component.h"
 #include "rotation_component.h"
 #include "velocity_component.h"

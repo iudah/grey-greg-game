@@ -1,6 +1,6 @@
 #include "wave_fn_collapse.h"
 
-#include <aabb_component.h>
+#include <collision_component.h>
 #include <actor.h>
 #include <component.h>
 #include <inttypes.h>

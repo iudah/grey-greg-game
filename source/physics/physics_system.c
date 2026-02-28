@@ -7,7 +7,7 @@
 #include <string.h>
 #include <zot.h>
 
-#include "aabb_component.h"
+#include "collision_component.h"
 #include "component.h"
 #include "event_system.h"
 #include "force_component.h"
@@ -43,7 +43,7 @@ float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
   return sqrtf(vget_lane_f32(sum, 0));
 }
 
-bool aabb_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext, struct vec4_st *b_pos,
+bool collision_overlap(struct vec4_st *a_pos, struct vec4_st *a_ext, struct vec4_st *b_pos,
                   struct vec4_st *b_ext) {
   auto a_pos_simd = vld1q_f32((float *)a_pos);
   auto b_pos_simd = vld1q_f32((float *)b_pos);
@@ -134,7 +134,7 @@ void physics_system_update(game_logic *logic, float delta_time) {
   compute_collisions(logic);
 }
 
-void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
+void compute_swept_collision_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
                             struct vec4_st *extent, float32x4_t *out_min, float32x4_t *out_max) {
   if (!prev_pos) {
     prev_pos = curr_pos;
@@ -160,7 +160,7 @@ void compute_swept_aabb_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
   }
 }
 
-bool check_aabb_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
+bool check_collision_overlap(float32x4_t min_a, float32x4_t max_a, float32x4_t min_b,
                         float32x4_t max_b) {
   uint32x4_t le_max = vcleq_f32(vsubq_f32(min_a, max_b), vdupq_n_f32(GREY_ZERO));
   uint32x4_t ge_min = vcleq_f32(vsubq_f32(min_b, max_a), vdupq_n_f32(GREY_ZERO));
@@ -336,15 +336,15 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
 }
 
 void compute_collisions(game_logic *logic) {
-  // float *radii = aabb_component->streams->collision_radius;
-  // struct vec4_st *extents = aabb_component->streams->collision_extent;
+  // float *radii = collision_component->streams->collision_radius;
+  // struct vec4_st *extents = collision_component->streams->collision_extent;
   // struct vec4_st *physix_positions = position_component->streams->position;
   // struct vec4_st *physix_previous_positions = position_component->streams->previous_position;
 
   // if (!physix_previous_positions) physix_previous_positions = physix_positions;
 
-  for (uint32_t aabb_i = 0; aabb_i < aabb_component->set.count; ++aabb_i) {
-    entity entity_a = get_entity(aabb_component, aabb_i);
+  for (uint32_t collision_i = 0; collision_i < collision_component->set.count; ++collision_i) {
+    entity entity_a = get_entity(collision_component, collision_i);
     // uint32_t pos_i;
 
     // if (!component_get_dense_id((struct generic_component *)position_component, entity_a,
@@ -360,10 +360,10 @@ void compute_collisions(game_logic *logic) {
 
     float32x4_t min_a;
     float32x4_t max_a;
-    compute_swept_aabb_box(position_a, prev_position_a, extent_a, &min_a, &max_a);
+    compute_swept_collision_box(position_a, prev_position_a, extent_a, &min_a, &max_a);
 
-    for (uint32_t aabb_j = aabb_i + 1; aabb_j < aabb_component->set.count; ++aabb_j) {
-      entity entity_b = get_entity(aabb_component, aabb_j);
+    for (uint32_t collision_j = collision_i + 1; collision_j < collision_component->set.count; ++collision_j) {
+      entity entity_b = get_entity(collision_component, collision_j);
 
       if(!belong_to_same_collision_layer(entity_a, entity_b)) continue;
 
@@ -381,9 +381,9 @@ void compute_collisions(game_logic *logic) {
       float32x4_t min_b;
       float32x4_t max_b;
 
-      compute_swept_aabb_box(position_b, prev_position_b, extent_b, &min_b, &max_b);
+      compute_swept_collision_box(position_b, prev_position_b, extent_b, &min_b, &max_b);
 
-      if (check_aabb_overlap(min_a, max_a, min_b, max_b)) {
+      if (check_collision_overlap(min_a, max_a, min_b, max_b)) {
         resolve_collision(logic, entity_a, entity_b);
       }
     }
@@ -416,17 +416,17 @@ bool resolve_walkthrough(entity a, entity b) {
   struct vec4_st *prev_pos_b = get_previous_position(b);
   struct vec4_st *pos_a = get_position(a);
   struct vec4_st *pos_b = get_position(b);
-  struct vec4_st *aabb_extent_a = get_collision_extent(a);
-  struct vec4_st *aabb_extent_b = get_collision_extent(b);
+  struct vec4_st *collision_extent_a = get_collision_extent(a);
+  struct vec4_st *collision_extent_b = get_collision_extent(b);
 
-  if (!prev_pos_a || !prev_pos_b || !pos_a || !pos_b || !aabb_extent_a || !aabb_extent_b)
+  if (!prev_pos_a || !prev_pos_b || !pos_a || !pos_b || !collision_extent_a || !collision_extent_b)
     return false;
 
   int coll_axis;
   float fac;
 
   // Check for collision
-  if (!ray_box_collision(prev_pos_a, prev_pos_b, pos_a, pos_b, aabb_extent_a, aabb_extent_b, &fac,
+  if (!ray_box_collision(prev_pos_a, prev_pos_b, pos_a, pos_b, collision_extent_a, collision_extent_b, &fac,
                          &coll_axis)) {
     return false;
   }
@@ -434,7 +434,7 @@ bool resolve_walkthrough(entity a, entity b) {
   if (fac > 1.0f || fac < 0.0f) return false;
 
   // Adjust positions based on collision
-  float safe_fac = fac > GREY_AABB_GAP ? fac - GREY_AABB_GAP : 0.0f;
+  float safe_fac = fac > GREY_COLLISION_GAP ? fac - GREY_COLLISION_GAP : 0.0f;
 
   update_position(a, (float *)pos_a, (float *)prev_pos_a, safe_fac, coll_axis);
   update_position(b, (float *)pos_b, (float *)prev_pos_b, safe_fac, coll_axis);
@@ -452,7 +452,7 @@ bool walk_through_resolution(event *e) {
   return resolve_walkthrough(data->a, data->b);
 }
 
-bool set_entity_aabb_lim(entity e, float x, float y, float z) {
+bool set_entity_collision_lim(entity e, float x, float y, float z) {
   struct vec4_st *collision_extent = get_collision_extent(e);
   float *collision_radius = get_collision_radius(e);
 
