@@ -21,11 +21,7 @@
 #include "velocity_component.h"
 #include "waypoint_component.h"
 
-typedef struct {
-  entity a, b;
-  // float collision_time_factor;
-} collision_data;
-
+collision_resolve_callback collision_resolved_callback = NULL;
 bool resolve_walkthrough(entity a, entity b, collision_flag collision_flag_a,
                          collision_flag collision_flag_b);
 
@@ -393,7 +389,8 @@ void compute_collisions(game_logic *logic) {
         collision_flag collision_flag_b = *get_collision_flag(entity_b);
         if ((collision_flag_a | collision_flag_b) & COLLISION_TRIGGER) {
           event_enqueue_collision(logic, entity_a, entity_b);
-        } else if (collision_flag_a & COLLISION_SOLID && collision_flag_b & COLLISION_SOLID) {
+        }
+        if (collision_flag_a & COLLISION_SOLID && collision_flag_b & COLLISION_SOLID) {
           resolve_walkthrough(entity_a, entity_b, collision_flag_a, collision_flag_b);
         }
       }
@@ -471,6 +468,10 @@ bool resolve_walkthrough(entity a, entity b, collision_flag collision_flag_a,
   update_position(a, (float *)pos_a, (float *)prev_pos_a, safe_fac, coll_axis);
   update_position(b, (float *)pos_b, (float *)prev_pos_b, safe_fac, coll_axis);
 
+  if (collision_resolved_callback) {
+    collision_resolved_callback(a, b, coll_axis, face_hit);
+  }
+
   return true;
 }
 
@@ -500,4 +501,8 @@ bool advance_patrol_index(entity e) {
   waypoint->z++;
 
   return true;
+}
+
+void register_collision_resolve_callback(collision_resolve_callback cb) {
+  collision_resolved_callback = cb;
 }

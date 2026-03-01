@@ -1,6 +1,7 @@
 #ifndef GREY_CONSTANTS_H
 #define GREY_CONSTANTS_H
 
+#include <entity.h>
 #include <stdbool.h>
 
 // ------ Numeric precision ----------------------
@@ -34,7 +35,6 @@
 #define HASH_PRIME_Z (3892886149u)
 
 // ------ Physics --------------------
-#define GRAVITATIONAL_ACCEL  (9.8f)
 #define MAX_ACCUMULATED_TIME (0.25)  // spiral-of-death guard (seconds)
 
 // ------ AI distances ----------
@@ -48,10 +48,6 @@
 #define FLEE_SPEED   (0.5f)
 #define CHASE_SPEED  (0.45f)
 #define PATROL_SPEED (0.4f)
-
-// ------ Player movement --------
-#define XY_ACCEL (40.f)
-#define JUMP     (140.f)
 
 // ------ Event system ----------
 #define MAX_EVENT         (63555)
@@ -93,6 +89,12 @@ typedef enum {
 
 #define COLLISION_LAYER(n)  (1 << (n))  // Layer bitmask helper (up to 32 layers with uint32_t)
 #define COLLISION_LAYER_ALL (0xFFFFFFFF)
+
+typedef struct {
+  entity a, b;
+} collision_data;
+
+typedef void (*collision_resolve_callback)(entity a, entity b, int axis, collision_flag flag);
 
 // ------ AI states ----------------
 typedef enum {

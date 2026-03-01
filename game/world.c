@@ -32,6 +32,23 @@ typedef struct generic_component generic_component_t;
 #define LAYER_PICKUP  COLLISION_LAYER(3)
 #define LAYER_HAZARD  COLLISION_LAYER(4)
 
+#define XY_ACCEL         (40.f)
+#define JUMP_SPEED       (-2.5f)  // Tiles per Frame
+#define MAX_JUMP         (2)
+#define JUMP_HOLD_FRAMES (10)
+
+struct jump_state {
+  uint32_t jumps;
+  uint32_t jump_timer;
+  bool can_jump;
+  bool is_in_air;
+  bool key_held;
+  bool prev_key_held;
+  bool on_ground;
+};
+
+struct jump_state player_jump_state = {0, 0, true, false, false, false, false};
+
 entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   entity e = create_entity();
 
@@ -105,10 +122,30 @@ bool player_movement(event *e) {
   float *mass = get_mass(player);
   if (!mass) return false;
 
+  if (e->type == COLLISION_EVENT) {
+    collision_data *collision = (collision_data *)e->info;
+    entity other;
+    if (is_same_entity(collision->a, player)) {
+      other = collision->b;
+    } else if (is_same_entity(collision->b, player)) {
+      other = collision->a;
+    } else {
+      return false;
+    }
+
+    struct vec4_st *player_pos = get_position(player);
+    struct vec4_st *other_pos = get_position(other);
+    if (!other_pos) return false;
+
+    if (player_pos->y > other_pos->y && (*get_collision_flag(other) & COLLISION_FACE_UP)) {
+      player_jump_state.on_ground = true;
+    }
+  }
+
   if (e->type == KEY_DOWN_EVENT) {
     switch (*(KeyboardKey *)e->info) {
       case KEY_UP: {
-        add_force(player, (float[]){0, -JUMP * *mass, 0, 0});
+        player_jump_state.key_held = true;
         DrawText("UP", 160, 160, 240, RED);
         LOG("UP");
       } break;
@@ -127,16 +164,14 @@ bool player_movement(event *e) {
   }
 
   if (e->type == KEY_RELEASED_EVENT) {
-    // LOG("%s\n", __FUNCTION__);
-    // exit(0);
     switch (*(int *)e->info) {
-      case KEY_UP:
-        // add_force(player, (float[]){0, 11 * get_mass(player), 0, 0});
-        break;
+      case KEY_UP: {
+        player_jump_state.key_held = false;
+      } break;
 
       case KEY_LEFT:
       case KEY_RIGHT:
-        add_force(player, (float[]){-get_velocity(player)->x / TIMESTEP / *mass, 0, 0, 0});
+        add_force(player, (float[]){-get_velocity(player)->x * *mass / (TIMESTEP * 0.3f), 0, 0, 0});
         break;
 
       default:
@@ -147,14 +182,63 @@ bool player_movement(event *e) {
   return true;
 }
 
+bool player_update(event *e) {
+  if (player_jump_state.on_ground) {
+    player_jump_state.jumps = 0;
+  } else {
+    if (!player_jump_state.jumps) {
+      player_jump_state.jumps = 1;
+    }
+  }
+
+  if (player_jump_state.key_held && !player_jump_state.prev_key_held &&
+      player_jump_state.jumps < MAX_JUMP) {
+    player_jump_state.jumps++;
+    player_jump_state.jump_timer = JUMP_HOLD_FRAMES;
+    player_jump_state.on_ground = false;
+  }
+
+  if (!player_jump_state.key_held) {
+    player_jump_state.jump_timer = 0;
+  }
+
+  if (player_jump_state.jump_timer > 0) {
+    float *mass = get_mass(player);
+    if (!mass) return false;
+
+    add_force(player, (float[]){0, JUMP_SPEED * *mass, 0, 0});
+    player_jump_state.jump_timer--;
+    player_jump_state.on_ground = false;
+  }
+
+  player_jump_state.prev_key_held = player_jump_state.key_held;
+  player_jump_state.on_ground = false;  // reset each frame for collision event to set it back
+
+  return true;
+}
+
+void collision_resolve_cb(entity a, entity b, int axis, collision_flag direction) {
+  if (axis != 1) return;
+
+  bool landing_on_something = direction == COLLISION_FACE_DOWN;
+  bool lifted_by_something = direction == COLLISION_FACE_UP;
+
+  if ((is_same_entity(a, player) && landing_on_something) ||
+      (is_same_entity(b, player) && lifted_by_something)) {
+    player_jump_state.on_ground = true;
+  }
+}
+
 void init_world(game_logic *logic) {
   LOG("%s", __FUNCTION__);
 
   register_system_update((system_update_fn_t)gravity_system_update);
   register_system_update((system_update_fn_t)physics_system_update);
+  register_system_update((system_update_fn_t)player_update);
   register_system_update((system_update_fn_t)clear_forces);
 
-  // event_handler_register(game_logic_get_event_system(logic), walk_through_resolution);
+  register_collision_resolve_callback(collision_resolve_cb);
+
   event_handler_register(game_logic_get_event_system(logic), player_movement);
 
   // A World (map) has multiple biomes (sub-map).

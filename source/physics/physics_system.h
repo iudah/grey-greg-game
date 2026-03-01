@@ -1,6 +1,7 @@
 #ifndef PHYSICS_SYSTEM_H
 #define PHYSICS_SYSTEM_H
 
+#include <grey_constants.h>
 #include <simd.h>
 
 #include "entity.h"
@@ -15,5 +16,6 @@ bool advance_patrol_index(entity e);
 void compute_swept_collision_box(struct vec4_st *curr_pos, struct vec4_st *prev_pos,
                                  struct vec4_st *extent, float32x4_t *out_min,
                                  float32x4_t *out_max);
+void register_collision_resolve_callback(collision_resolve_callback cb);
 
 #endif
