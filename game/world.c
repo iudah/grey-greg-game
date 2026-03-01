@@ -33,9 +33,11 @@ typedef struct generic_component generic_component_t;
 #define LAYER_HAZARD  COLLISION_LAYER(4)
 
 #define XY_ACCEL         (40.f)
-#define JUMP_SPEED       (-2.5f)  // Tiles per Frame
-#define MAX_JUMP         (2)
-#define JUMP_HOLD_FRAMES (10)
+#define MAX_JUMP_COUNT   (2)
+#define MAX_JUMP_HEIGHT  (4.0f)                                                // Tiles
+#define JUMP_SPEED       (-2.5f)                                               // Tiles per Frame
+#define GRAVITY_ACC      (JUMP_SPEED * JUMP_SPEED / (2.0f * MAX_JUMP_HEIGHT))  // Tiles per Frame^2
+#define JUMP_HOLD_FRAMES ((uint32_t)(-JUMP_SPEED / GRAVITY_ACC / MAX_JUMP_COUNT))  // Frames
 
 struct jump_state {
   uint32_t jumps;
@@ -192,7 +194,7 @@ bool player_update(event *e) {
   }
 
   if (player_jump_state.key_held && !player_jump_state.prev_key_held &&
-      player_jump_state.jumps < MAX_JUMP) {
+      player_jump_state.jumps < MAX_JUMP_COUNT) {
     player_jump_state.jumps++;
     player_jump_state.jump_timer = JUMP_HOLD_FRAMES;
     player_jump_state.on_ground = false;
@@ -238,7 +240,7 @@ void init_world(game_logic *logic) {
   register_system_update((system_update_fn_t)clear_forces);
 
   register_collision_resolve_callback(collision_resolve_cb);
-
+  set_gravitational_acceleration(GRAVITY_ACC);
   event_handler_register(game_logic_get_event_system(logic), player_movement);
 
   // A World (map) has multiple biomes (sub-map).
