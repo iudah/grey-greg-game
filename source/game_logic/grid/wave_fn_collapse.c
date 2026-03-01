@@ -1,7 +1,7 @@
 #include "wave_fn_collapse.h"
 
-#include <collision_component.h>
 #include <actor.h>
+#include <collision_component.h>
 #include <component.h>
 #include <inttypes.h>
 #include <irand.h>
@@ -250,16 +250,18 @@ void wfc_slot_set_rule(struct wfc_state *grid, uint32_t cell_idx, uint32_t rule_
 void make_cell_solid(struct wfc_state *state, wfc_atlas *atlas, resource_manager *mgr,
                      uint32_t width, uint32_t height, struct grid_coord origin) {
   for (uint32_t idx = 0; idx < atlas->tile_count; ++idx) {
-    wfc_slot_set_rule(state, origin.y * width + origin.x, idx,
-                      (resource_get_tile_flag(mgr, idx) & TILE_SOLID) != 0);
+    collision_flag flag;
+    if (!resource_get_tile_flag(mgr, idx, &flag)) continue;
+    wfc_slot_set_rule(state, origin.y * width + origin.x, idx, (flag & COLLISION_SOLID) != 0);
   }
 }
 
 void make_cell_empty(struct wfc_state *state, wfc_atlas *atlas, resource_manager *mgr,
                      uint32_t width, uint32_t height, struct grid_coord origin) {
   for (uint32_t idx = 0; idx < atlas->tile_count; ++idx) {
-    wfc_slot_set_rule(state, origin.y * width + origin.x, idx,
-                      (resource_get_tile_flag(mgr, idx) & TILE_WALKABLE) != 0);
+    collision_flag flag;
+    if (!resource_get_tile_flag(mgr, idx, &flag)) continue;
+    wfc_slot_set_rule(state, origin.y * width + origin.x, idx, !(flag & COLLISION_SOLID));
   }
 }
 

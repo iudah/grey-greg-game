@@ -1,6 +1,7 @@
 #include "physics_system.h"
 
 #include <assert.h>
+#include <grey_constants.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -24,6 +25,9 @@ typedef struct {
   entity a, b;
   // float collision_time_factor;
 } collision_data;
+
+bool resolve_walkthrough(entity a, entity b, collision_flag collision_flag_a,
+                         collision_flag collision_flag_b);
 
 float distance(struct vec4_st *npc_pos, struct vec4_st *player_pos, bool flee,
                float32x4_t *diff_ptr) {
@@ -184,6 +188,7 @@ void event_enqueue_collision(game_logic *logic, entity entity_i, entity entity_j
   event_trigger(game_logic_get_event_system(logic), collision, COLLISION_EVENT);
 }
 
+#if 0
 void resolve_collision(game_logic *logic, entity entity_i, entity entity_j) {
   event_enqueue_collision(logic, entity_i, entity_j);
 
@@ -212,6 +217,7 @@ void resolve_collision(game_logic *logic, entity entity_i, entity entity_j) {
   set_velocity(entity_i, v);
 #endif
 }
+#endif
 
 static inline bool radii_collide(struct vec4_st *prev_pos_a, struct vec4_st *pos_a,
                                  struct vec4_st *prev_pos_b, struct vec4_st *pos_b, float radii_a,
@@ -340,6 +346,7 @@ bool ray_box_collision(struct vec4_st *prev_pos_a, struct vec4_st *prev_pos_b,
 void compute_collisions(game_logic *logic) {
   const entity *collision_sorted_entities = get_collision_sorted_entity();
   const float *min_xs = get_collision_sorted_min_x();
+  bool is_2d = grey_is_2d();
 
   for (uint32_t collision_i = 0; collision_i < collision_component->set.count; ++collision_i) {
     entity entity_a = collision_sorted_entities[collision_i];
@@ -363,7 +370,7 @@ void compute_collisions(game_logic *logic) {
 
       entity entity_b = collision_sorted_entities[collision_j];
 
-      if (!belong_to_same_collision_layer(entity_a, entity_b)) continue;
+      if (!should_test_collision(entity_a, entity_b)) continue;
 
       float *radius_b = get_collision_radius(entity_b);
       struct vec4_st *extent_b = get_collision_extent(entity_b);
@@ -382,7 +389,13 @@ void compute_collisions(game_logic *logic) {
       compute_swept_collision_box(position_b, prev_position_b, extent_b, &min_b, &max_b);
 
       if (check_collision_overlap(min_a, max_a, min_b, max_b)) {
-        resolve_collision(logic, entity_a, entity_b);
+        collision_flag collision_flag_a = *get_collision_flag(entity_a);
+        collision_flag collision_flag_b = *get_collision_flag(entity_b);
+        if ((collision_flag_a | collision_flag_b) & COLLISION_TRIGGER) {
+          event_enqueue_collision(logic, entity_a, entity_b);
+        } else if (collision_flag_a & COLLISION_SOLID && collision_flag_b & COLLISION_SOLID) {
+          resolve_walkthrough(entity_a, entity_b, collision_flag_a, collision_flag_b);
+        }
       }
     }
   }
@@ -409,7 +422,8 @@ void update_position(entity e, float *pos, float *prev_pos, float fac, int coll_
   }
 }
 
-bool resolve_walkthrough(entity a, entity b) {
+bool resolve_walkthrough(entity a, entity b, collision_flag collision_flag_a,
+                         collision_flag collision_flag_b) {
   struct vec4_st *prev_pos_a = get_previous_position(a);
   struct vec4_st *prev_pos_b = get_previous_position(b);
   struct vec4_st *pos_a = get_position(a);
@@ -431,6 +445,26 @@ bool resolve_walkthrough(entity a, entity b) {
 
   if (fac > 1.0f || fac < 0.0f) return false;
 
+  collision_flag face_hit;
+  switch (coll_axis) {
+    case 0:
+      face_hit = pos_a->x < pos_b->x ? COLLISION_FACE_LEFT : COLLISION_FACE_RIGHT;
+      break;
+    case 1:
+      face_hit = pos_a->y < pos_b->y ? COLLISION_FACE_DOWN : COLLISION_FACE_UP;
+      break;
+    case 2:
+      face_hit =
+          grey_is_2d() ? 0 : (pos_a->z < pos_b->z ? COLLISION_FACE_NEAR : COLLISION_FACE_FAR);
+      break;
+    default:
+      face_hit = 0;
+  }
+
+  bool axis_blocked = collision_flag_a & face_hit || collision_flag_b & face_hit;
+
+  if (!axis_blocked) return false;
+
   // Adjust positions based on collision
   float safe_fac = fac > GREY_COLLISION_GAP ? fac - GREY_COLLISION_GAP : 0.0f;
 
@@ -440,6 +474,7 @@ bool resolve_walkthrough(entity a, entity b) {
   return true;
 }
 
+#if 0
 bool walk_through_resolution(event *e) {
   // printf("______________%s\n", __FUNCTION__);
 
@@ -449,6 +484,7 @@ bool walk_through_resolution(event *e) {
 
   return resolve_walkthrough(data->a, data->b);
 }
+#endif
 
 struct vec4_st *get_next_patrol_point(entity e) { return get_waypoint(e); }
 

@@ -5,6 +5,7 @@
 #include <simd.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zot.h>
 
 #include "collision_component.h"
@@ -138,7 +139,7 @@ bool register_to_spatial_partition(entity e) {
 }
 
 bool deregister_from_spatial_partition_if_registered(entity e) {
-  struct vec4_st *position = get_prev_position(e);
+  struct vec4_st *position = get_previous_position(e);
   struct vec4_st *extent = get_collision_extent(e);
 
   if (!position || !extent) return false;

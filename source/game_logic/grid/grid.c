@@ -81,7 +81,15 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
 
       DrawTextureRec(*tex, *rect, position, WHITE);
 
-      if ((resource_get_tile_flag(resc_mgr, cell->tile_text_id) & TILE_SOLID) != 0) {
+      collision_flag flag;
+      if (!resource_get_tile_flag(resc_mgr, cell->tile_text_id, &flag)) continue;
+
+      if (flag != COLLISION_AIR) {
+        uint32_t layer;
+        uint32_t mask;
+        if (!resource_get_tile_coll_layer(resc_mgr, cell->tile_text_id, &layer)) continue;
+        if (!resource_get_tile_coll_mask(resc_mgr, cell->tile_text_id, &mask)) continue;
+
         entity platform = create_entity();
 
         actor_add_component(platform, (generic_component_t *)position_component);
@@ -96,10 +104,13 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
 
         set_entity_position(platform, center_x, center_y, 0);
         set_entity_collision_extent(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
-        set_entity_collision_layer(platform, COLLISION_LAYER_TERRAIN);
-        set_entity_collision_mask(platform, COLLISION_LAYER_PLAYER | COLLISION_LAYER_NPC);
+        set_entity_collision_layer(platform, layer);
+        set_entity_collision_mask(platform, mask);
+        set_entity_collision_flag(platform, flag);
 
-        set_entity_color(platform, (irand() % 255) << 16 | (irand() % 255) << 8 | (irand() % 255));
+        set_entity_color(platform, flag == COLLISION_SOLID     ? (255 << 16 | 100)
+                                   : flag == COLLISION_TRIGGER ? (255 << 8 | 100)
+                                                               : 0);
       }
     }
   }
@@ -108,8 +119,8 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
   return cache;
 }
 
-resc_tile_flag grid_cell_get_flag(grid_cell *cell, resource_manager *rm) {
-  return resource_get_tile_flag(rm, cell->tile_text_id);
+bool grid_cell_get_flag(grid_cell *cell, resource_manager *rm, collision_flag *flag) {
+  return resource_get_tile_flag(rm, cell->tile_text_id, flag);
 }
 
 void grid_cell_set_tile_id(grid_cell *cell, uint64_t tile_id) { cell->tile_text_id = tile_id; }

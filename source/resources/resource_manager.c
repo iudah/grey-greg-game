@@ -1,5 +1,6 @@
 #include "resource_manager.h"
 
+#include <grey_constants.h>
 #include <ilist.h>
 #include <raylib_glue.h>
 #include <zot.h>
@@ -7,7 +8,9 @@
 struct tile {
   Rectangle src_rect;
   uint32_t texture_id;
-  resc_tile_flag flag;
+  collision_flag flag;
+  uint32_t coll_layer;
+  uint32_t coll_mask;
 };
 
 struct resource_manager {
@@ -32,11 +35,16 @@ Texture2D resource_get_texture(resource_manager *mgr, uint32_t texture_id) {
 }
 
 uint32_t resource_make_tile(resource_manager *mgr, uint32_t texture_id, uint32_t x, uint32_t y,
-                            uint32_t tile_width, uint32_t tile_height, resc_tile_flag flag) {
+                            uint32_t tile_width, uint32_t tile_height, collision_flag flag,
+                            uint32_t coll_layer, uint32_t coll_mask) {
   if (!mgr->tiles) {
     mgr->tiles = ilist_create(sizeof(struct tile));
   }
-  struct tile tile = {.src_rect = {x, y, tile_width, tile_height}, .texture_id = texture_id, flag};
+  struct tile tile = {.src_rect = {x, y, tile_width, tile_height},
+                      .texture_id = texture_id,
+                      .flag = flag,
+                      .coll_layer = coll_layer,
+                      .coll_mask = coll_mask};
 
   ilist_append(mgr->tiles, &tile);
 
@@ -57,9 +65,32 @@ Texture2D *resource_get_tile_texture(resource_manager *mgr, uint32_t tile_id) {
   return ilist_get(mgr->textures, tile->texture_id);
 }
 
-resc_tile_flag resource_get_tile_flag(resource_manager *mgr, uint32_t tile_id) {
-  struct tile *tile =ilist_get(mgr->tiles, tile_id);
-  if(!tile)return TILE_UNKNOWN;
-  else
-  return tile->flag;
+bool resource_get_tile_flag(resource_manager *mgr, uint32_t tile_id, collision_flag *flag) {
+  struct tile *tile = ilist_get(mgr->tiles, tile_id);
+  if (!tile)
+    return false;
+  else {
+    *flag = tile->flag;
+    return true;
+  }
+}
+
+bool resource_get_tile_coll_layer(resource_manager *mgr, uint32_t tile_id, uint32_t *coll_layer) {
+  struct tile *tile = ilist_get(mgr->tiles, tile_id);
+  if (!tile)
+    return false;
+  else {
+    *coll_layer = tile->coll_layer;
+    return true;
+  }
+}
+
+bool resource_get_tile_coll_mask(resource_manager *mgr, uint32_t tile_id, uint32_t *coll_mask) {
+  struct tile *tile = ilist_get(mgr->tiles, tile_id);
+  if (!tile)
+    return false;
+  else {
+    *coll_mask = tile->coll_mask;
+    return true;
+  }
 }

@@ -4,6 +4,7 @@
 #include <game_logic.h>
 #include <game_main.h>
 #include <gravity_system.h>
+#include <grey_constants.h>
 #include <grid.h>
 #include <grid_component.h>
 #include <inttypes.h>
@@ -25,6 +26,12 @@
 
 typedef struct generic_component generic_component_t;
 
+#define LAYER_PLAYER  COLLISION_LAYER(0)
+#define LAYER_TERRAIN COLLISION_LAYER(1)
+#define LAYER_ENEMY   COLLISION_LAYER(2)
+#define LAYER_PICKUP  COLLISION_LAYER(3)
+#define LAYER_HAZARD  COLLISION_LAYER(4)
+
 entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   entity e = create_entity();
 
@@ -43,15 +50,22 @@ entity sprite(float pos_x, float pos_y, uint32_t rgba) {
 entity terrain(float pos_x, float pos_y, uint32_t rgba) { return sprite(pos_x, pos_y, rgba); }
 
 entity person(float pos_x, float pos_y, float vel_x, float vel_y) {
-  // entity e = sprite(pos_x, pos_y, 0xb5651d);
-  entity e = sprite(pos_x, pos_y, 0);
+  entity e = sprite(pos_x, pos_y, 0xb5651d << 8 | 100);
   actor_add_component(e, (generic_component_t *)velocity_component);
   actor_add_component(e, (generic_component_t *)force_component);
   actor_add_component(e, (generic_component_t *)mass_component);
   // set_entity_velocity(e, vel_x, vel_y, 0);
   set_entity_velocity(e, 0, 0, 0);
   set_entity_mass(e, 10);
+  set_entity_collision_flag(e, COLLISION_SOLID_2D);
+  set_entity_collision_layer(e, LAYER_ENEMY);
+  set_entity_collision_mask(e, LAYER_TERRAIN);
+  return e;
+}
 
+entity make_player(float pos_x, float pos_y) {
+  entity e = person(pos_x, pos_y, 0, 0);
+  set_entity_collision_layer(e, LAYER_PLAYER);
   return e;
 }
 
@@ -140,7 +154,7 @@ void init_world(game_logic *logic) {
   register_system_update((system_update_fn_t)physics_system_update);
   register_system_update((system_update_fn_t)clear_forces);
 
-  event_handler_register(game_logic_get_event_system(logic), walk_through_resolution);
+  // event_handler_register(game_logic_get_event_system(logic), walk_through_resolution);
   event_handler_register(game_logic_get_event_system(logic), player_movement);
 
   // A World (map) has multiple biomes (sub-map).
@@ -160,13 +174,20 @@ void init_world(game_logic *logic) {
 
   uint32_t A, G, D, R, I, L;
 
-  uint32_t air_tile = A = resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, TILE_WALKABLE);
-  uint32_t grass_tile = G =
-      resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size, TILE_SOLID);
-  uint32_t dirt_tile = D = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size,
-                                              tile_size, TILE_SOLID);
-  uint32_t ladder_tile = L = resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size,
-                                                3 * tile_size, tile_size, tile_size, TILE_SOLID);
+  A = resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, COLLISION_AIR, COLLISION_AIR, COLLISION_AIR);
+  uint32_t air_tile = A;
+
+  G = resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size, COLLISION_SOLID,
+                         LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
+  uint32_t grass_tile = G;
+
+  D = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size, tile_size,
+                         COLLISION_SOLID, LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
+  uint32_t dirt_tile = D;
+
+  L = resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size, tile_size,
+                         tile_size, COLLISION_TRIGGER, LAYER_TERRAIN, LAYER_PLAYER);
+  uint32_t ladder_tile = L;
 
   wfc_atlas *wfc_rules = wfc_atlas_create(4);
 
@@ -191,5 +212,5 @@ void init_world(game_logic *logic) {
   grid_set_grid_cache(game_map, game_map_cache);
 
   // A slave's dream is not of freedom but of a slave to call his own
-  player = person(start_pt[0] * 16 + 8 + 4, start_pt[1] * 16 + 8 - 4, 0, 0);
+  player = make_player(start_pt[0] * 16 + 8, start_pt[1] * 16 + 8);
 }

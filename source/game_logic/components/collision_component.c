@@ -20,6 +20,7 @@ COMPONENT_STREAM_DEFINE(collision, {
   entity *sorted_entities;
   float *min_xs;
   bool *spatial_dirty;
+  collision_flag *collision_flag;
 });
 
 bool initialize_collision_component() {
@@ -34,7 +35,8 @@ bool initialize_collision_component() {
                                         sizeof(*collision_component->streams->collision_mask),
                                         sizeof(*collision_component->streams->sorted_entities),
                                         sizeof(*collision_component->streams->min_xs),
-                                        sizeof(*collision_component->streams->spatial_dirty)},
+                                        sizeof(*collision_component->streams->spatial_dirty),
+                                        sizeof(*collision_component->streams->collision_flag)},
                            sizeof(*collision_component->streams) / sizeof(void *));
 
   return collision_component != NULL && component_intialized;
@@ -61,7 +63,7 @@ bool set_entity_collision_mask(entity e, uint32_t mask) {
   return true;
 }
 
-bool belong_to_same_collision_layer(entity e1, entity e2) {
+bool should_test_collision(entity e1, entity e2) {
   uint32_t *layer1 = get_collision_layer(e1);
   uint32_t *layer2 = get_collision_layer(e2);
   uint32_t *mask1 = get_collision_mask(e1);
@@ -160,5 +162,17 @@ bool set_collision_spatial_dirty(entity e, bool dirty) {
   if (!dirty_ptr) return false;
 
   *dirty_ptr = dirty;
+  return true;
+}
+
+const collision_flag *get_collision_flag(entity e) {
+  return COMPONENT_GET(collision, e, collision_flag);
+}
+
+bool set_entity_collision_flag(entity e, uint32_t flag) {
+  collision_flag *flag_ptr = COMPONENT_GET(collision, e, collision_flag);
+  if (!flag_ptr) return false;
+
+  *flag_ptr = flag;
   return true;
 }

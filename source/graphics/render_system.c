@@ -113,7 +113,8 @@ void raylib_render(game_logic *logic) {
 
 #if 1
     uint32_t collision_i;
-    if (!component_get_dense_id((struct generic_component *)collision_component, e, &collision_i)) continue;
+    if (!component_get_dense_id((struct generic_component *)collision_component, e, &collision_i))
+      continue;
 
     uint32_t pos_i;
     if (!component_get_dense_id((struct generic_component *)position_component, e, &pos_i))
@@ -122,11 +123,12 @@ void raylib_render(game_logic *logic) {
     struct vec4_st *interp_pos = get_interpolated_position(e);
     struct vec4_st *coll_extent = get_collision_extent(e);
     struct vec4_st *color = get_color(e);
-    if (!color || !coll_extent||!interp_pos) continue;
+    if (!color || !coll_extent || !interp_pos) continue;
 
+    // Draw collision boxes for debugging.
     DrawRectangle(interp_pos->x - coll_extent->x, interp_pos->y - coll_extent->y,
                   coll_extent->x * 2, coll_extent->y * 2,
-                  CLITERAL(Color){color->x, color->y, color->z, 180});
+                  CLITERAL(Color){color->x, color->y, color->z, color->w});
 #endif
   }
 }
