@@ -1,8 +1,8 @@
 #ifndef INPUT_SYSTEM_H
 #define INPUT_SYSTEM_H
 
-#include <grey_constants.h>
 #include <game_logic.h>
+#include <grey_constants.h>
 #include <raylib_glue.h>
 #ifdef RAYLIB_H
 typedef struct Circle {
@@ -22,5 +22,6 @@ typedef struct controller_config controller_config;
 
 void update_input_system(game_logic *logic);
 void render_controller(controller_config *controller);
+controller_config *get_input_controller_config();
 
 #endif

@@ -1,6 +1,7 @@
 #include "collision_component.h"
 
 #include <entity.h>
+#include <math.h>
 #include <physics_system.h>
 #include <position_component.h>
 #include <simd.h>

@@ -2,6 +2,7 @@
 
 #include <game_logic.h>
 #include <game_view.h>
+#include <input_system.h>
 #include <raylib_glue.h>
 #include <render_system.h>
 #include <zot.h>
@@ -57,7 +58,7 @@ void human_view_render(struct human_view *view, game_logic *logic, float interpo
   // draw ui elements
 
 #if defined(__ANDROID__) && !defined(NO_RAYLIB)
-  render_controller();
+  render_controller(get_input_controller_config());
 #endif
 
   EndDrawing();

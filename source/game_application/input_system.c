@@ -93,6 +93,9 @@ Vector2 project_pt_x(Vector2 center, Vector2 pt, float radius) {
 void update_input_system(game_logic *logic) {
   event_system *events_system = game_logic_get_event_system(logic);
 
+  Rectangle *pad = controller.pad;
+  Circle *stick = controller.stick;
+
 #ifndef NO_RAYLIB
 #if defined(__ANDROID__)
   int no_of_touch = GetTouchPointCount();
@@ -185,3 +188,5 @@ void update_input_system(game_logic *logic) {
 #endif
 #endif
 }
+
+controller_config *get_input_controller_config() { return &controller; }
