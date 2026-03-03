@@ -1,8 +1,8 @@
 #include <component.h>
 #include <irand.h>
 #include <istack.h>
-#include <strings.h>
 #include <string.h>
+#include <strings.h>
 #include <zot.h>
 
 #include "grid.h"
@@ -27,7 +27,8 @@ bool carve_cell_air(uint64_t *visited, wfc_atlas *atlas, uint32_t width, uint32_
   if (x >= width || y >= height) return false;
 
   for (uint32_t i = 0; i < air_height; ++i) {
-    struct grid_coord coord = {.x = x, .y = y > i ? y - i : (height + y - i)};
+    if (y < i) break;
+    struct grid_coord coord = {.x = x, .y = y - i};
     visit_cell(visited, coord.y * width + coord.x);
   }
 
@@ -63,7 +64,7 @@ uint32_t count_air_column(uint64_t *visited, uint32_t width, uint32_t height, ui
   int32_t up = y - 1;
   int32_t dn = y + 1;
 
-  while (up>=0 && up < height) {
+  while (up >= 0 && up < height) {
 #if 0
     if (!cell_is_visited(visited, up * width + x)) break;
     if (x + 1 < width && cell_is_visited(visited, up * width + (x + 1))) break;
@@ -84,7 +85,7 @@ uint32_t count_air_column(uint64_t *visited, uint32_t width, uint32_t height, ui
 #endif
   }
 
-  while (dn>=0 && dn < height) {
+  while (dn >= 0 && dn < height) {
 #if 0
     if (!cell_is_visited(visited, dn * width + x)) break;
     if (x + 1 < width && cell_is_visited(visited, dn * width + (x + 1))) break;
@@ -120,7 +121,7 @@ bool dfs_generate_maze(struct wfc_state *grid, uint32_t width, uint32_t height, 
 
   istack *backtrack_stack = istack_create(sizeof(struct maze_node));
 
-  if (y0 < 1) y0 = 1;
+  // if (y0 < 1) y0 = 1;
 
   wfc_direction base_directions[] = {NORTH, SOUTH, WEST, EAST};
 
@@ -192,18 +193,17 @@ bool dfs_generate_maze(struct wfc_state *grid, uint32_t width, uint32_t height, 
       int32_t step_x = (dx == 0) ? 0 : (dx > 0 ? 1 : -1);
       int32_t step_y = (dy == 0) ? 0 : (dy > 0 ? 1 : -1);
 
-      uint32_t curr_x = x + step_x;
-      uint32_t curr_y = y + step_y;
+      int32_t curr_x = (int32_t)x + step_x;
+      int32_t curr_y = (int32_t)y + step_y;
 
       while (curr_x != neighbor_x || curr_y != neighbor_y) {
+        if (curr_x < 0 || curr_y < 0 || curr_x >= (int32_t)width || curr_y >= (int32_t)height)
+          break;
         carve_cell_air(visited, atlas, width, height, curr_x, curr_y, air_height);
 
-        if (!curr_x && step_x < 0) curr_x = width;
-        if (!curr_y && step_y < 0) curr_y = height;
+       
         curr_x += step_x;
         curr_y += step_y;
-        if (curr_x >= width) curr_x -= width;
-        if (curr_y >= height) curr_y -= height;
       }
       struct maze_node neighbor_node = {
           .coord.x = neighbor_x, .coord.y = neighbor_y, .next_dir_idx = 0};
