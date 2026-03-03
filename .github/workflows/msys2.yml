@@ -63,7 +63,11 @@ jobs:
           ctest --test-dir "${{ steps.strings.outputs.build-output-dir }}" \
             --output-on-failure \
             --build-config ${{ matrix.build_type }}
-
+            
+      - name: List build output
+        shell: bash
+        run: find ${{ steps.msys2.outputs.ucrt64bin }} -name "*.dll" -o -name "*.exe" 2>/dev/null
+        
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
