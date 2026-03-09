@@ -66,8 +66,6 @@ entity sprite(float pos_x, float pos_y, uint32_t rgba) {
   return e;
 }
 
-entity terrain(float pos_x, float pos_y, uint32_t rgba) { return sprite(pos_x, pos_y, rgba); }
-
 entity person(float pos_x, float pos_y, float vel_x, float vel_y) {
   entity e = sprite(pos_x, pos_y, 0xb5651d << 8 | 100);
   actor_add_component(e, (generic_component_t *)velocity_component);
@@ -86,37 +84,6 @@ entity make_player(float pos_x, float pos_y) {
   entity e = person(pos_x, pos_y, 0, 0);
   set_entity_collision_layer(e, LAYER_PLAYER);
   return e;
-}
-
-entity rock(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0x7f8386); }
-
-entity grass(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0x3F9B0B); }
-
-entity mud(float pos_x, float pos_y) { return terrain(pos_x, pos_y, 0xb5651d); }
-
-struct {
-  entity *sprite;
-  uint32_t count;
-  uint32_t cap;
-} world;
-
-bool game_append_sprite(entity e) {
-  if (!world.cap) {
-    world.cap = 32;
-    world.sprite = zmalloc(world.cap * sizeof(*world.sprite));
-  }
-
-  if (world.cap == (world.count + 1)) {
-    world.cap += 32;
-    auto tmp = zrealloc(world.sprite, world.cap * sizeof(*world.sprite));
-    if (!tmp) {
-      return false;
-    }
-    world.sprite = tmp;
-  }
-
-  world.sprite[world.count++] = e;
-  return true;
 }
 
 bool player_movement(event *e) {
@@ -245,7 +212,6 @@ void init_world(game_logic *logic) {
 
   // A World (map) has multiple biomes (sub-map).
   entity world_entity = create_entity();
-  game_append_sprite(world_entity);
   attach_component(world_entity, (struct generic_component *)grid_component);
   attach_component(world_entity, (struct generic_component *)render_component);
 
@@ -258,32 +224,30 @@ void init_world(game_logic *logic) {
   uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tile_set.png");
   SetTextureFilter(resource_get_texture(resc_mgr, world_tile_set), TEXTURE_FILTER_POINT);
 
-  uint32_t A, G, D, R, I, L;
+  uint32_t air_tile;
+  uint32_t grass_tile;
+  uint32_t dirt_tile;
+  // uint32_t ladder_tile;
 
-  A = resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, COLLISION_AIR, COLLISION_AIR, COLLISION_AIR);
-  uint32_t air_tile = A;
+  air_tile =
+      resource_make_tile(resc_mgr, 0, 0, 0, 0, 0, COLLISION_AIR, COLLISION_AIR, COLLISION_AIR);
+  grass_tile = resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size,
+                                  COLLISION_SOLID, LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
+  dirt_tile = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size, tile_size,
+                                 COLLISION_SOLID, LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
+  // ladder_tile =
+  //     resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size, tile_size,
+  //                        tile_size, COLLISION_TRIGGER, LAYER_TERRAIN, LAYER_PLAYER);
 
-  G = resource_make_tile(resc_mgr, world_tile_set, 0, 0, tile_size, tile_size, COLLISION_SOLID,
-                         LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
-  uint32_t grass_tile = G;
-
-  D = resource_make_tile(resc_mgr, world_tile_set, 0, 1 * tile_size, tile_size, tile_size,
-                         COLLISION_SOLID, LAYER_TERRAIN, LAYER_PLAYER | LAYER_ENEMY);
-  uint32_t dirt_tile = D;
-
-  L = resource_make_tile(resc_mgr, world_tile_set, 9 * tile_size, 3 * tile_size, tile_size,
-                         tile_size, COLLISION_TRIGGER, LAYER_TERRAIN, LAYER_PLAYER);
-  uint32_t ladder_tile = L;
-
-  wfc_atlas *wfc_rules = wfc_atlas_create(4);
+  wfc_atlas *wfc_rules = wfc_atlas_create(3);
 
   wfc_atlas_add_rule(wfc_rules, air_tile, air_tile, air_tile, air_tile, air_tile);
   wfc_atlas_add_rule(wfc_rules, grass_tile, air_tile, air_tile, air_tile, air_tile);
   wfc_atlas_add_rule(wfc_rules, grass_tile, air_tile, grass_tile, dirt_tile, grass_tile);
   wfc_atlas_add_rule(wfc_rules, dirt_tile, grass_tile, dirt_tile, dirt_tile, dirt_tile);
   wfc_atlas_add_rule(wfc_rules, dirt_tile, dirt_tile, dirt_tile, dirt_tile, dirt_tile);
-  wfc_atlas_add_rule(wfc_rules, ladder_tile, air_tile, dirt_tile, dirt_tile, dirt_tile);
-  wfc_atlas_add_rule(wfc_rules, ladder_tile, air_tile, grass_tile, grass_tile, grass_tile);
+  // wfc_atlas_add_rule(wfc_rules, ladder_tile, air_tile, dirt_tile, dirt_tile, dirt_tile);
+  // wfc_atlas_add_rule(wfc_rules, ladder_tile, air_tile, grass_tile, grass_tile, grass_tile);
 
   wfc_atlas_compile(wfc_rules);
 
