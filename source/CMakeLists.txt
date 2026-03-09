@@ -300,6 +300,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
   target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(${TARGET} PUBLIC dl X11 GL Xrandr Xinerama Xcursor Xi)
+endif()
+
 target_compile_features(${TARGET} PUBLIC c_std_23)
 
 include(CheckCCompilerFlag)
