@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 
 project(
   grey
-  VERSION 1.0.1
-  DESCRIPTION "grey")
+  VERSION 1.1.0
+  DESCRIPTION "grey is a game engine written in C because I am too lazy to learn mainstream engine, built with a focus on simplicity, performance, and ease of use. It provides a set of tools and libraries for game development, including rendering, physics, input handling, and resource management.")
 
 set(TARGET grey)
 
@@ -17,6 +17,7 @@ include(../common.cmake)
 option(BUILD_PHONY_MAIN "Build phony main" ON)
 option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
 option(BUILD_RAYLIB "Build Raylib with Grey" ON)
+option(BUILD_ZIP "Build source zip package" OFF)
 
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -27,7 +28,7 @@ include(ExternalProject)
 set(COMMON_TOOLCHAIN_ARGS "")
 if(CMAKE_TOOLCHAIN_FILE)
   list(APPEND COMMON_TOOLCHAIN_ARGS
-       "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 endif()
 if("${PLATFORM}" STREQUAL "Android")
   set(PLATFORM_IS_ANDROID TRUE)
@@ -43,8 +44,8 @@ if(ANDROID AND ${PLATFORM_IS_ANDROID})
     set(ANDROID_NDK $ENV{ANDROID_NDK})
   endif()
   list(APPEND COMMON_TOOLCHAIN_ARGS "-DANDROID_ABI=${ANDROID_ABI}"
-       "-DANDROID_PLATFORM=${ANDROID_PLATFORM}" "-DANDROID_NDK=${ANDROID_NDK}"
-       "-DENABLE_SANITIZERS=${ENABLE_SANITIZERS}")
+    "-DANDROID_PLATFORM=${ANDROID_PLATFORM}" "-DANDROID_NDK=${ANDROID_NDK}"
+    "-DENABLE_SANITIZERS=${ENABLE_SANITIZERS}")
 endif()
 
 find_package(memalloc QUIET)
@@ -59,13 +60,13 @@ if(NOT TARGET memalloc::memalloc)
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
-               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-               -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
     # BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     # UPDATE_DISCONNECTED TRUE
     BUILD_BYPRODUCTS
-      "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include")
@@ -76,9 +77,9 @@ endif()
 set_target_properties(
   memalloc_imported
   PROPERTIES
-    IMPORTED_LOCATION
-    "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include")
+  IMPORTED_LOCATION
+  "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include")
 
 find_package(zot QUIET)
 add_library(zot_imported STATIC IMPORTED)
@@ -92,13 +93,13 @@ if(NOT TARGET zot::zot)
     GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/zot
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
-               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-               -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON ${COMMON_TOOLCHAIN_ARGS}
     # BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     # UPDATE_DISCONNECTED TRUE
     BUILD_BYPRODUCTS
-      "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
   )
 
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/zot/include")
@@ -109,15 +110,15 @@ endif()
 set_target_properties(
   zot_imported
   PROPERTIES
-    IMPORTED_LOCATION
-    "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include")
+  IMPORTED_LOCATION
+  "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/zot/include")
 
 set(PCG_INSTALL_DIR "${CMAKE_BINARY_DIR}/pcg")
 set(PCG_INCLUDE_DIR "${PCG_INSTALL_DIR}/include")
 set(PCG_LIB_DIR "${PCG_INSTALL_DIR}/lib")
 set(PCG_STATIC_LIB
-    "${PCG_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pcg_random${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${PCG_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pcg_random${CMAKE_STATIC_LIBRARY_SUFFIX}"
 )
 
 if(NOT TARGET pcg_external)
@@ -131,13 +132,13 @@ if(NOT TARGET pcg_external)
     # CC="${CMAKE_C_COMPILER}" CFLAGS="${CMAKE_C_FLAGS}
     # --sysroot=${CMAKE_SYSROOT}"
     BUILD_COMMAND make -C <SOURCE_DIR>/src CC=${CMAKE_C_COMPILER}
-                  "CFLAGS=${CMAKE_C_FLAGS} --sysroot=${CMAKE_SYSROOT}"
+    "CFLAGS=${CMAKE_C_FLAGS} --sysroot=${CMAKE_SYSROOT}"
     INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_INCLUDE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_LIB_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "<SOURCE_DIR>/include"
-            "${PCG_INCLUDE_DIR}"
+    "${PCG_INCLUDE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy "<SOURCE_DIR>/src/libpcg_random.a"
-            "${PCG_STATIC_LIB}"
+    "${PCG_STATIC_LIB}"
     BUILD_BYPRODUCTS "${PCG_STATIC_LIB}")
 
   file(MAKE_DIRECTORY ${PCG_INSTALL_DIR})
@@ -148,7 +149,7 @@ endif()
 add_library(pcg_imported STATIC IMPORTED GLOBAL)
 set_target_properties(
   pcg_imported PROPERTIES IMPORTED_LOCATION "${PCG_STATIC_LIB}"
-                          INTERFACE_INCLUDE_DIRECTORIES "${PCG_INCLUDE_DIR}")
+  INTERFACE_INCLUDE_DIRECTORIES "${PCG_INCLUDE_DIR}")
 add_dependencies(pcg_imported pcg_external)
 add_library(pcg::pcg ALIAS pcg_imported)
 
@@ -162,14 +163,14 @@ if(${BUILD_RAYLIB})
     if(${PLATFORM_IS_ANDROID} AND ANDROID)
       set(PLATFORM Android)
       set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=MinSizeRel -DPLATFORM=Android
-                            -DCUSTOMIZE_BUILD=ON ${COMMON_TOOLCHAIN_ARGS})
+        -DCUSTOMIZE_BUILD=ON ${COMMON_TOOLCHAIN_ARGS})
     else()
       if(NOT "${PLATFORM}" STREQUAL "Desktop" AND NOT "${PLATFORM}" STREQUAL
-                                                  "Web")
+        "Web")
         set(PLATFORM Desktop)
       endif()
       set(RAYLIB_EXTRA_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                            -DPLATFORM=${PLATFORM})
+        -DPLATFORM=${PLATFORM})
     endif()
 
     ExternalProject_Add(
@@ -180,13 +181,13 @@ if(${BUILD_RAYLIB})
       GIT_CLONE_DEPTH 1
       INSTALL_DIR ${CMAKE_BINARY_DIR}/raylib
       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXAMPLES=OFF
-                 -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-                 ${RAYLIB_EXTRA_ARGS}
+      -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      ${RAYLIB_EXTRA_ARGS}
       # BUILD_ALWAYS OFF
       STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
       # UPDATE_DISCONNECTED TRUE
       BUILD_BYPRODUCTS
-        "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+      "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
     )
 
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include")
@@ -197,9 +198,9 @@ if(${BUILD_RAYLIB})
   set_target_properties(
     raylib_imported
     PROPERTIES
-      IMPORTED_LOCATION
-      "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include")
+    IMPORTED_LOCATION
+    "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include")
 endif()
 
 if(${PLATFORM_IS_ANDROID})
@@ -207,17 +208,17 @@ if(${PLATFORM_IS_ANDROID})
 
   add_library(
     native_app_glue STATIC ${NATIVE_APP_GLUE}/android_native_app_glue.c
-                           ${NATIVE_APP_GLUE}/android_native_app_glue.h)
+    ${NATIVE_APP_GLUE}/android_native_app_glue.h)
   add_library(grey::native_app_glue ALIAS native_app_glue)
   target_include_directories(
     native_app_glue
     PUBLIC $<BUILD_INTERFACE:${NATIVE_APP_GLUE}/>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-           $<INSTALL_INTERFACE:include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
 
   target_compile_options(native_app_glue PRIVATE -fPIC -Wall
-                                                 -Werror=format-security)
+    -Werror=format-security)
 endif()
 
 find_package(Threads REQUIRED)
@@ -229,7 +230,7 @@ if(${PLATFORM_IS_ANDROID})
   add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
   target_compile_options(${TARGET} PRIVATE -fPIC)
   target_compile_definitions(${TARGET} PRIVATE USE_ANDROID_LOG
-                                               TAG="${PROJECT_NAME}")
+    TAG="${PROJECT_NAME}")
 else()
   add_library(${TARGET} SHARED ${SOURCE_FILES} ${HEADER_FILES})
 endif()
@@ -240,20 +241,20 @@ target_sources(
 target_include_directories(
   ${TARGET}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_application>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/components>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/entities>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/systems>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/grid>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/graphics>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/physics>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/extras>
-         $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_application>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/components>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/entities>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/systems>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/game_logic/grid>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/graphics>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/physics>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/neon_2_sse>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/extras>
+  $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(${TARGET} PUBLIC m)
 target_link_libraries(${TARGET} PUBLIC Threads::Threads)
@@ -265,14 +266,14 @@ if(${PLATFORM_IS_ANDROID})
   target_link_libraries(
     ${TARGET}
     PUBLIC native_app_glue
-           log
-           android
-           EGL
-           GLESv2
-           OpenSLES
-           atomic
-           c
-           dl)
+    log
+    android
+    EGL
+    GLESv2
+    OpenSLES
+    atomic
+    c
+    dl)
 
   target_link_options(
     ${TARGET}
@@ -294,8 +295,8 @@ else()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows"
-   OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
-   OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+  OR CMAKE_SYSTEM_NAME STREQUAL "CYGWIN"
+  OR CMAKE_SYSTEM_NAME STREQUAL "MSYS")
   target_link_libraries(${TARGET} PUBLIC ws2_32 gdi32 winmm)
 endif()
 
@@ -304,7 +305,7 @@ target_compile_features(${TARGET} PUBLIC c_std_23)
 include(CheckCCompilerFlag)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL
-                                        "RelWithDebInfo")
+  "RelWithDebInfo")
   if(MSVC)
     target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
     target_link_options(${TARGET} PRIVATE /DEBUG)
@@ -328,7 +329,7 @@ endif()
 
 if(NOT MSVC)
   if((CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES
-                                              "aarch64"))
+       "aarch64"))
     check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
     if(HAS_NEON_FLAG)
       target_compile_options(${TARGET} PRIVATE -mfpu=neon)
@@ -343,7 +344,7 @@ endif()
 
 if(BUILD_PHONY_MAIN AND NOT ${PLATFORM_IS_ANDROID})
   file(WRITE ${CMAKE_BINARY_DIR}/grey_phony_main.c
-       "int game_main();\nint main() { game_main(); return 0; }\n")
+    "int game_main();\nint main() { game_main(); return 0; }\n")
   add_executable(grey_phony ${CMAKE_BINARY_DIR}/grey_phony_main.c)
   target_link_libraries(grey_phony PRIVATE ${TARGET})
 endif()
@@ -370,22 +371,22 @@ endif()
 
 install(
   FILES
-    "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${CMAKE_BINARY_DIR}/zot/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zot${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${CMAKE_BINARY_DIR}/memalloc/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/zot/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY "${CMAKE_BINARY_DIR}/memalloc/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(${BUILD_RAYLIB})
   install(
     FILES
-      "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
     DESTINATION ${CMAKE_INSTALL_LIBDIR})
   install(DIRECTORY "${CMAKE_BINARY_DIR}/raylib/include/"
-          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -397,3 +398,23 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/grey)
 
 export(EXPORT GreyTargets FILE "${CMAKE_BINARY_DIR}/grey-config.cmake")
+
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT "olaolujude@gmail.com")
+set(CPACK_PACKAGE_VENDOR "iudah")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PROJECT_DESCRIPTION})
+# set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
+# set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
+
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS")
+elseif(UNIX)
+  set(CPACK_GENERATOR "TGZ")
+endif()
+
+if(BUILD_ZIP)
+  set(CPACK_SOURCE_GENERATOR "ZIP")
+endif()
+
+include(CPack)

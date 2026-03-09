@@ -15,6 +15,7 @@ include(../common.cmake)
 
 option(ENABLE_SANITIZERS "Enable the sanitizers" ON)
 option(BUILD_RAYLIB "Build Raylib with Grey" ON)
+option(BUILD_ZIP "Build source zip package" OFF)
 
 message(STATUS "Project: ${PROJECT_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
@@ -126,3 +127,24 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/greg)
 
 export(EXPORT GregTargets FILE "${CMAKE_BINARY_DIR}/greg-config.cmake")
+
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT "olaolujude@gmail.com")
+set(CPACK_PACKAGE_VENDOR "iudah")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PROJECT_DESCRIPTION})
+# set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
+# set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
+
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS")
+elseif(UNIX)
+  set(CPACK_GENERATOR "TGZ")
+endif()
+
+if(BUILD_ZIP)
+  set(CPACK_SOURCE_GENERATOR "ZIP")
+endif()
+
+include(CPack)
+
