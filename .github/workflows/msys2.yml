@@ -28,7 +28,10 @@ jobs:
       - name: Get MSYS2 ucrt64 bin path
         id: msys2
         shell: msys2 {0}
-        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
+          # -u converts to Unix format
+          echo "msys_path=$(cygpath -u /ucrt64/bin)" >> $GITHUB_OUTPUT
 
       - name: Set reusable strings
         id: strings
@@ -47,7 +50,7 @@ jobs:
             -DCMAKE_C_COMPILER=clang.exe \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_SYSTEM_NAME=Windows \
-            -DMSYS2_BIN_DIR="${{ steps.msys2.outputs.ucrt64bin }}" \
+            -DMSYS2_BIN_DIR="${{ steps.msys2.outputs.msys_path }}" \
             -S "${{ steps.strings.outputs.build-src-dir }}"
 
       - name: Build
