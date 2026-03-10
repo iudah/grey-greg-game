@@ -126,25 +126,30 @@ install(
   NAMESPACE greg::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/greg)
 
+# Bundle MSYS2 DLLs on Windows using the path provided by CI
+if(WIN32 AND DEFINED MSYS2_BIN_DIR)
+  install(
+    FILES 
+      "${MSYS2_BIN_DIR}/libunwind.dll"
+      "${MSYS2_BIN_DIR}/libc++.dll"
+      # Add any other required standard DLLs here 
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+endif()
+
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/assets
+)
+
 export(EXPORT GregTargets FILE "${CMAKE_BINARY_DIR}/greg-config.cmake")
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_CONTACT "olaolujude@gmail.com")
 set(CPACK_PACKAGE_VENDOR "iudah")
+set(CPACK_PACKAGE_CONTACT "olaolujude@gmail.com") 
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "iudah")    
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PROJECT_DESCRIPTION})
-# set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
-# set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
-
-if(WIN32)
-  set(CPACK_GENERATOR "NSIS")
-elseif(UNIX)
-  set(CPACK_GENERATOR "TGZ")
-endif()
-
-if(BUILD_ZIP)
-  set(CPACK_SOURCE_GENERATOR "ZIP")
-endif()
 
 include(CPack)
 

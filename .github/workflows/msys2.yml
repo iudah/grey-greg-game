@@ -8,7 +8,7 @@ jobs:
       matrix:
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: msys2/setup-msys2@v2
         with:
@@ -47,6 +47,7 @@ jobs:
             -DCMAKE_C_COMPILER=clang.exe \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_SYSTEM_NAME=Windows \
+            -DMSYS2_BIN_DIR="${{ steps.msys2.outputs.ucrt64bin }}" \
             -S "${{ steps.strings.outputs.build-src-dir }}"
 
       - name: Build
@@ -64,10 +65,17 @@ jobs:
             --output-on-failure \
             --build-config ${{ matrix.build_type }}
 
-      - name: Upload artifact
+      - name: Run CPack
+        shell: bash
+        run: |
+          export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
+          cd "${{ steps.strings.outputs.build-output-dir }}"
+          cpack -G "ZIP;NSIS" -C ${{ matrix.build_type }}
+
+      - name: Upload Windows Package
         uses: actions/upload-artifact@v4
         with:
           name: greg-windows-${{ matrix.build_type }}
           path: |
-            build/game/greg.exe
-            build/source/libgrey.dll
+            ${{ steps.strings.outputs.build-output-dir }}/*.zip
+            ${{ steps.strings.outputs.build-output-dir }}/*.exe
