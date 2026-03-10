@@ -74,6 +74,6 @@ jobs:
       with:
         name: greg-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
         path: |
-          build/game/greg.exe
+          build/game/greg
           build/source/libgrey.so
           
