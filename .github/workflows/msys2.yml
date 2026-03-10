@@ -28,7 +28,7 @@ jobs:
       - name: Get MSYS2 ucrt64 bin path
         id: msys2
         shell: msys2 {0}
-        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
+        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" | sed 's|\\|/|g' >> "$GITHUB_OUTPUT"
 
       - name: Set reusable strings
         id: strings
@@ -52,6 +52,8 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          echo ${{ steps.msys2.outputs.ucrt64bin }}
+          find ${{ steps.msys2.outputs.ucrt64bin }} -name *.dll
           export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
           cmake --build "${{ steps.strings.outputs.build-output-dir }}" \
             --config ${{ matrix.build_type }}
