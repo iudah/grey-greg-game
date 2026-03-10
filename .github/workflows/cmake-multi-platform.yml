@@ -75,5 +75,5 @@ jobs:
         name: greg-windows-${{ matrix.build_type }}
         path: |
           build/game/greg.exe
-          build/source/libgrey.dll
+          build/source/libgrey.so
           
