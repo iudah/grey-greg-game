@@ -71,5 +71,3 @@ jobs:
           path: |
             build/game/greg.exe
             build/source/libgrey.dll
-            ${{ steps.msys2.outputs.ucrt64bin }}/libunwind.dll
-            ${{ steps.msys2.outputs.ucrt64bin }}/libc++.dll
