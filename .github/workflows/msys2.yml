@@ -52,8 +52,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          echo ${{ steps.msys2.outputs.ucrt64bin }}
-          find ${{ steps.msys2.outputs.ucrt64bin }} -name *.dll
           export PATH="${{ steps.msys2.outputs.ucrt64bin }}:$PATH"
           cmake --build "${{ steps.strings.outputs.build-output-dir }}" \
             --config ${{ matrix.build_type }}
