@@ -28,7 +28,7 @@ jobs:
       - name: Get MSYS2 ucrt64 bin path
         id: msys2
         shell: msys2 {0}
-        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" | sed 's|\\|/|g' >> "$GITHUB_OUTPUT"
+        run: echo "ucrt64bin=$(cygpath -w /ucrt64/bin)" >> "$GITHUB_OUTPUT"
 
       - name: Set reusable strings
         id: strings
@@ -73,5 +73,3 @@ jobs:
           path: |
             build/game/greg.exe
             build/source/libgrey.dll
-            ${{ steps.msys2.outputs.ucrt64bin }}/libunwind.dll
-            ${{ steps.msys2.outputs.ucrt64bin }}/libc++.dll
