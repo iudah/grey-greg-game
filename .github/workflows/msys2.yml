@@ -47,7 +47,7 @@ jobs:
             -DCMAKE_C_COMPILER=clang.exe \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_SYSTEM_NAME=Windows \
-            -DMSYS2_BIN_DIR="${{ steps.msys2.outputs.ucrt64bin }}" \
+            -DMSYS2_BIN_DIR="${{ steps.strings.outputs.build-src-dir }}" \
             -S "${{ steps.strings.outputs.build-src-dir }}"
 
       - name: Build
