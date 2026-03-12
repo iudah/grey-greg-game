@@ -5,10 +5,11 @@ set(HEADER_FILES
     core/simd.h
     game_application/event_system.h
     game_application/game_main.h
+    game_application/grey_constants.h
     game_application/input_system.h
+    game_logic/components/ai_component.h
     game_logic/components/collision_component.h
     game_logic/components/collision_spatial_hash.h
-    game_logic/components/ai_component.h
     game_logic/components/component.h
     game_logic/components/component_base.h
     game_logic/components/component_manager.h
@@ -37,5 +38,6 @@ set(HEADER_FILES
     physics/arm_neon_ext_itunu.h
     physics/gravity_system.h
     physics/physics_system.h
+    resources/game_app_path.h
     resources/resource_manager.h
 )

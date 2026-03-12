@@ -5,9 +5,9 @@ set(SOURCE_FILES
     game_application/event_system.c
     game_application/game_main.c
     game_application/input_system.c
+    game_logic/components/ai_component.c
     game_logic/components/collision_component.c
     game_logic/components/collision_spatial_hash.c
-    game_logic/components/ai_component.c
     game_logic/components/component.c
     game_logic/components/component_manager.c
     game_logic/components/force_component.c
@@ -38,4 +38,6 @@ set(SOURCE_FILES
     network/network.c
     physics/gravity_system.c
     physics/physics_system.c
-    resources/resource_manager.c)
+    resources/game_app_path.c
+    resources/resource_manager.c
+)
