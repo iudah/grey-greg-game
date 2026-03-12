@@ -107,6 +107,24 @@ if(NOT MSVC)
   endif()
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # Look for shared libraries in the 'lib' folder 
+  # relative to location of the executable ('bin' folder)
+    set_target_properties(${TARGET} PROPERTIES
+    INSTALL_RPATH "$ORIGIN/../lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+  )
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Apple")
+  # Look for shared libraries in the 'lib' folder 
+  # relative to location of the executable ('bin' folder)
+    set_target_properties(${TARGET} PROPERTIES
+    INSTALL_RPATH "$executable_path/../lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+  )
+endif()
+
 include(GNUInstallDirs)
 
 install(
