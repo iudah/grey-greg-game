@@ -36,6 +36,6 @@ char *game_app_path() {
   count = strlen(_game_app_path);
 #endif
   _game_app_path[count] = '\0';
-  _game_app_path = realloc(_game_app_path, sizeof(*_game_app_path) * (count + 1));
+  _game_app_path = zrealloc(_game_app_path, sizeof(*_game_app_path) * (count + 1));
   return _game_app_path;
 }
