@@ -11,6 +11,8 @@
 #include <unistd.h>
 #endif
 
+#include <zot.h>
+
 char *_game_app_path;
 
 char *game_app_path() {
