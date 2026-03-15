@@ -221,7 +221,7 @@ void init_world(game_logic *logic) {
   resource_manager *resc_mgr = game_logic_get_resource_manager(logic);
 
   const int tile_size = GREY_TILE_SIZE;
-  uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tile_set.png");
+  uint32_t world_tile_set = resource_load_texture(resc_mgr, "world_tileset.png");
   SetTextureFilter(resource_get_texture(resc_mgr, world_tile_set), TEXTURE_FILTER_POINT);
 
   uint32_t air_tile;
