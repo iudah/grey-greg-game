@@ -7,13 +7,28 @@
 #endif
 
 #ifdef __linux__
+#include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
 #endif
 
+#include <string.h>
 #include <zot.h>
 
 char *_game_app_path;
+
+char *dirname(char *path) {
+  char *dir = zstrdup(path);
+  char *last_bslash = strrchr(dir, '\\');
+  char *last_fslash = strrchr(dir, '/');
+  if (last_bslash < last_fslash) {
+    last_bslash = last_fslash;
+  }
+  *last_bslash = '\0';
+  path = zstrdup(dir);
+  zfree(dir);
+  return path;
+}
 
 char *game_app_path() {
   if (_game_app_path) {
@@ -35,7 +50,10 @@ char *game_app_path() {
   }
   count = strlen(_game_app_path);
 #endif
-  _game_app_path[count] = '\0';
-  _game_app_path = zrealloc(_game_app_path, sizeof(*_game_app_path) * (count + 1));
+  char *tmp = dirname(_game_app_path);
+  if (!tmp) tmp = ".";
+  tmp = zstrdup(tmp);
+  zfree(_game_app_path);
+  _game_app_path = tmp;
   return _game_app_path;
 }
