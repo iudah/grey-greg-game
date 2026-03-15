@@ -103,7 +103,7 @@ RenderTexture2D *grid_bake(grid *grid, resource_manager *resc_mgr) {
         float center_y = ((float)y * tile_h) + ((float)tile_h / 2.0f);
 
         set_entity_position(platform, center_x, center_y, 0);
-        set_entity_collision_extent(platform, (float)tile_w / 2, (float)tile_h / 2, 0);
+        set_entity_collision_extent(platform, (float)tile_w / 4, (float)tile_h / 4, 0);
         set_entity_collision_layer(platform, layer);
         set_entity_collision_mask(platform, mask);
         set_entity_collision_flag(platform, flag);
