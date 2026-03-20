@@ -26,8 +26,12 @@ resource_manager *resource_manager_create() {
 }
 
 uint32_t resource_load_texture(resource_manager *mgr, const char *fpath) {
+  #ifndef __ANDROID__
   char path[1024];
   snprintf(path, sizeof(path), "%s/assets/%s", game_app_path(), fpath);
+  #else
+  char *path=fpath;
+  #endif
   Texture2D texture = LoadTexture(path);
   ilist_append(mgr->textures, &texture);
   return ilist_count(mgr->textures) - 1;

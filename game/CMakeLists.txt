@@ -160,6 +160,12 @@ install(
   DESTINATION ${CMAKE_INSTALL_BINDIR}/assets
 )
 
+if(ANDROID_ASSET_DEST)
+message(STATUS "Creating link to assets at: ${ANDROID_ASSET_DEST}")
+file(REMOVE_RECURSE "${ANDROID_ASSET_DEST}")
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${ANDROID_ASSET_DEST}")
+endif()
+
 export(EXPORT GregTargets FILE "${CMAKE_BINARY_DIR}/greg-config.cmake")
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
