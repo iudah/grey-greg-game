@@ -17,6 +17,7 @@
 
 char *_game_app_path;
 
+#ifdef WIN32
 char *dirname(char *path) {
   char *dir = zstrdup(path);
   char *last_bslash = strrchr(dir, '\\');
@@ -29,6 +30,7 @@ char *dirname(char *path) {
   zfree(dir);
   return path;
 }
+#endif
 
 char *game_app_path() {
   if (_game_app_path) {
