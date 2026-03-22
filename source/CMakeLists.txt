@@ -127,19 +127,18 @@ if(NOT TARGET pcg_external)
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/pcg/"
     PREFIX "${PCG_INSTALL_DIR}"
     CONFIGURE_COMMAND ""
-    # BUILD_COMMAND make -C <SOURCE_DIR>/src CC=${CMAKE_C_COMPILER}
-    # CFLAGS=${CMAKE_C_FLAGS} BUILD_COMMAND make -C <SOURCE_DIR>/src
-    # CC="${CMAKE_C_COMPILER}" CFLAGS="${CMAKE_C_FLAGS}
-    # --sysroot=${CMAKE_SYSROOT}"
-    BUILD_COMMAND make -j${PROCESSOR_COUNT} -C <SOURCE_DIR>/src CC=${CMAKE_C_COMPILER}
-    "CFLAGS=${CMAKE_C_FLAGS} --target=${ANDROID_LLVM_TRIPLE} --sysroot=${CMAKE_SYSROOT}"
+    BUILD_COMMAND make -C <SOURCE_DIR>/src 
+        CC=${CMAKE_C_COMPILER} 
+        # Add --target here to resolve the "unknown CPU" error
+        "CFLAGS=${CMAKE_C_FLAGS} --target=${ANDROID_LLVM_TRIPLE} --sysroot=${CMAKE_SYSROOT}"
     INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_INCLUDE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PCG_LIB_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "<SOURCE_DIR>/include"
     "${PCG_INCLUDE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy "<SOURCE_DIR>/src/libpcg_random.a"
     "${PCG_STATIC_LIB}"
-    BUILD_BYPRODUCTS "${PCG_STATIC_LIB}")
+    BUILD_BYPRODUCTS "${PCG_STATIC_LIB}"
+)
 
   file(MAKE_DIRECTORY ${PCG_INSTALL_DIR})
   file(MAKE_DIRECTORY ${PCG_INCLUDE_DIR})
