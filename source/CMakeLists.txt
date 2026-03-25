@@ -199,7 +199,8 @@ if(${BUILD_RAYLIB})
     PROPERTIES
     IMPORTED_LOCATION
     "${CMAKE_BINARY_DIR}/raylib/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}raylib${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include")
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/raylib/include"
+    INTERFACE_LINK_OPTIONS "-Wl,--wrap=fopen")
 endif()
 
 if(${PLATFORM_IS_ANDROID})
@@ -260,6 +261,10 @@ target_link_libraries(${TARGET} PUBLIC Threads::Threads)
 target_link_libraries(${TARGET} PUBLIC pcg::pcg)
 target_link_libraries(${TARGET} PUBLIC zot::zot)
 target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
+
+# Fail-safe for raylib.
+# Todo: Test if INTERFACE_LINK_OPTIONS "-Wl,--wrap=fopen" above works
+target_link_options(${TARGET} PUBLIC -Wl,--wrap=fopen)
 
 if(${PLATFORM_IS_ANDROID})
   target_link_libraries(
